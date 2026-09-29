@@ -54,3 +54,23 @@ Why: a single Facebook post can spike traffic fast enough to burn the
 daily (250) or weekly (1000) cap in hours, locking the demo out mid-launch.
 These three mitigations cost little and avoid that failure mode without
 committing to the bigger own-database rebuild.
+
+## 2026-09-23 — Adzuna is a prototyping data source, not the final one
+Decided: keep using Adzuna to build and prove the corridor-search mechanics
+(API call, Shapely point-in-polygon filtering, the full pipeline end to
+end), but don't treat it as the permanent backend. Real v2 data comes from
+company ATS boards (Greenhouse, Lever, etc.) and/or schema.org JobPosting
+data pulled from career pages, geocoded properly (e.g. Census Bureau
+Geocoder for US addresses), with data precision labeled in the UI so a
+verified-address pin and an approximate-area pin don't look the same.
+Why: pulled a real Adzuna response and checked it — three different
+companies (Autodesk, Amazon, Curtiss-Wright), all tagged "Portland,
+Multnomah County," came back with the exact same lat/long to 6 decimal
+places. A fourth Portland-tagged listing had a different point entirely.
+That means Adzuna's coordinates are pinned to a named-area reference point,
+not the actual job location — the point-in-polygon math is exact, but the
+input data isn't. Since ReDraw's whole pitch is being more precise than a
+city+radius search, shipping on Adzuna's geocoding long-term would quietly
+undermine the one thing this product is supposed to do better than
+everyone else. Adzuna's still fine, and still legally clean, for proving
+the mechanics work — it's just not where this ends up.
