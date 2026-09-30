@@ -1,11 +1,15 @@
-# FastAPI entrypoint — build order step 2
+### FastAPI entrypoint ###
 
 from fastapi import FastAPI
 from app.adzuna import get_job
+from app.models import SearchRequest
+from app.geo import filter_by_polygon
 
 app = FastAPI()
 
-@app.get("/search")
+@app.post("/search")
 
-def search_job(what: str, where: str):
-    return get_job(what, where)
+def search(request: SearchRequest):
+    jobs = get_job(request.what, request.where)
+    filtered_jobs = filter_by_polygon(jobs, request.polygon)
+    return filtered_jobs
