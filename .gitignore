@@ -5,3 +5,6 @@ __pycache__/
 *.db
 .DS_Store
 ROADMAP.md
+CLAUDE.md
+CLAUDE.local.md
+.claude/
