@@ -55,7 +55,7 @@ daily (250) or weekly (1000) cap in hours, locking the demo out mid-launch.
 These three mitigations cost little and avoid that failure mode without
 committing to the bigger own-database rebuild.
 
-## 2026-09-23 — Adzuna is a prototyping data source, not the final one
+## 2026-09-24 — Adzuna is a prototyping data source, not the final one
 Decided: keep using Adzuna to build and prove the corridor-search mechanics
 (API call, Shapely point-in-polygon filtering, the full pipeline end to
 end), but don't treat it as the permanent backend. Real v2 data comes from
@@ -74,3 +74,55 @@ city+radius search, shipping on Adzuna's geocoding long-term would quietly
 undermine the one thing this product is supposed to do better than
 everyone else. Adzuna's still fine, and still legally clean, for proving
 the mechanics work — it's just not where this ends up.
+
+## 2026-09-30 — FastAPI serves the frontend static files directly
+Decided: mount `static/` straight onto the FastAPI app
+(`StaticFiles(directory="static", html=True)`) instead of hosting the
+frontend separately from the backend.
+Why: this is a real, documented pattern (part of Starlette, which FastAPI is
+built on), not a hack — but it's not how larger production apps usually do
+it. The more common split is frontend on a CDN/static host (Vercel,
+Netlify, S3+CloudFront) and backend on its own host, which scales better
+since a CDN serves static files far more efficiently than a Python process
+can, but costs you CORS configuration and two separate deployments instead
+of one. For ReDraw right now, single-origin FastAPI serving both is simpler
+and avoids CORS entirely, which fits the same "prove it works before
+optimizing for scale" reasoning as the SQLite-over-Postgres call. If this
+ever needs to scale, splitting the frontend out later is a well-understood
+migration (add CORS middleware, change one URL in map.js) — not a rewrite.
+
+## 2026-09-30 — drop the user-facing location field, derive it from the drawn shape instead
+Decided: remove the "where" text input from the UI entirely. The backend now
+reverse-geocodes points sampled from the user's drawn polygon into real
+place names, queries Adzuna once per distinct place name, merges and dedupes
+the results (by job id), then runs the existing Shapely filter on that
+combined pool.
+Why: testing surfaced a real UX bug — if a user drew a shape in one area but
+typed a different (or mismatched) location, Adzuna's text-matched results
+and the user's polygon would never overlap, silently returning nothing.
+First considered just dropping "where" and pulling a bigger results_per_page
+with no location filter at all, but that's just gambling with better odds —
+a nationwide random sample still might not contain anything inside a
+specific small drawn shape, and there'd be no way to tell "nothing matched"
+apart from "we got unlucky." Deriving the location directly from the shape's
+own geometry is deterministic instead of probabilistic: Adzuna gets told the
+real area because it was computed from where the user actually drew, not
+guessed by the user or left to chance. Also correctly handles a bent/long
+corridor (the actual flagship use case) that a single centroid would get
+wrong — sampling multiple points along the shape instead of one center point
+avoids that failure mode.
+
+## 2026-09-30 — using the public Nominatim (OpenStreetMap) reverse-geocoding API, free tier, for now
+Decided: use nominatim.openstreetmap.org's free public API for the
+shape-to-location step above, with a real User-Agent header and 1-second
+delay between calls as their usage policy requires.
+Why: read their actual usage policy before committing to this (not just
+assumed it was fine). It explicitly permits exactly this use case —
+"directly triggered by the end-user," "moderate" number of users — but the
+1 req/sec rate limit is global across the whole app's traffic, not
+per-user, and their own policy says apps with real scale should expect to
+need their own self-hosted Nominatim instance or a paid commercial geocoder
+(Google, Mapbox). Same shape of tradeoff as the Adzuna commercial-license
+decision: free tier is legitimately fine to prove the mechanic and run a
+small demo, but there's a known, already-identified ceiling to deal with
+before this could handle real traffic, not a silent trap to discover later.

@@ -11,8 +11,11 @@ APP_KEY = os.environ["ADZUNA_APP_KEY"]
 
 url = "https://api.adzuna.com/v1/api/jobs/us/search/1"
 
+### Searches for the jobs ###
+
 def search_job(job):
     return {
+        "id": job["id"],
         "title": job["title"],
         "company": job["company"]["display_name"],
         "location": job["location"]["display_name"],
@@ -23,14 +26,17 @@ def search_job(job):
         "url": job["redirect_url"],
     }
 
-def get_job(what, where):
+### Calls Adzuna, then takes the JSON, puts it in a dict, loops through it, trims it, then returns  the new list. ###
+
+def get_job(what, where=None):
     params = {
         "app_id": APP_ID,
         "app_key": APP_KEY,
-        "results_per_page": 5,
+        "results_per_page": 50,
         "what": what,
-        "where": where
     }
+    if where:
+        params["where"] = where
 
     response = requests.get(url, params=params)
     jobs = [search_job(job) for job in response.json()["results"]]
@@ -45,9 +51,8 @@ if __name__ == "__main__":
     params = {
         "app_id": APP_ID,
         "app_key": APP_KEY,
-        "results_per_page": 5,
+        "results_per_page": 50,
         "what": "software developer",
-        "where": "portland"
     }
 
     response = requests.get(url, params=params)

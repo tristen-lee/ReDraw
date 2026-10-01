@@ -1,1 +1,29 @@
-<!-- Leaflet frontend — build order step 4 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReDraw</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>ReDraw</h1>
+    <h2>Stop searching in circles.</h2>
+
+    <label>What job do you want?</label>
+    <input type="text" name="job-input" id="job-input">
+    <button id="search-button">Search</button>
+
+<div id="map">
+</div>
+
+<!-- Leaflet scripts + map script -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="map.js"></script>
+
+
+</body>
+</html>

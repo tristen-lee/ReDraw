@@ -15,7 +15,7 @@ def filter_by_polygon(jobs, polygon_coordinates):
 
 
 if __name__ == "__main__":
-    # rough box around Portland, OR — remember: (longitude, latitude)
+    ### Testable Code - Succesful ###
     test_polygon = [
         (-122.80, 45.45),
         (-122.80, 45.55),
