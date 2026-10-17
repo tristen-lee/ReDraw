@@ -120,6 +120,8 @@ def normalize(item):
         "unplaced_locations": [
             location.get("LocationName") for location in raw_locations if not has_coordinates(location)
         ],
+        "total_locations": len(raw_locations),
+        "raw": item,
     }
 
 
