@@ -1,0 +1,247 @@
+[
+  {
+    "employer": "Nike",
+    "domain": "nike.com",
+    "url": "https://nike.com/careers",
+    "final_url": "https://careers.nike.com/",
+    "status": 200,
+    "platform": "workday",
+    "token": "nike",
+    "site": "nke2"
+  },
+  {
+    "employer": "Intel",
+    "domain": "intel.com",
+    "url": "https://intel.com/jobs",
+    "final_url": "https://www.intel.com/content/www/us/en/jobs/life-at-intel.html",
+    "status": 200,
+    "platform": "workday",
+    "token": "intel",
+    "site": "External"
+  },
+  {
+    "employer": "Columbia Sportswear",
+    "domain": "columbia.com",
+    "url": "https://columbia.com/careers",
+    "final_url": "https://www.columbia.com/careers/",
+    "status": 200,
+    "platform": "workday",
+    "token": "columbiasportswearcompany",
+    "site": "CSC_Careers"
+  },
+  {
+    "employer": "Adidas America",
+    "domain": "adidas-group.com",
+    "platform": null
+  },
+  {
+    "employer": "Daimler Truck North America",
+    "domain": "daimlertruck.com",
+    "platform": null
+  },
+  {
+    "employer": "Providence Health",
+    "domain": "providence.org",
+    "platform": null
+  },
+  {
+    "employer": "OHSU",
+    "domain": "ohsu.edu",
+    "url": "https://ohsu.edu/careers",
+    "final_url": "https://www.ohsu.edu/human-resources?utm_source=careers&utm_medium=radio&utm_campaign=OPB",
+    "status": 200,
+    "platform": "icims",
+    "token": "careersat-ohsu",
+    "site": null
+  },
+  {
+    "employer": "Legacy Health",
+    "domain": "legacyhealth.org",
+    "url": "https://legacyhealth.org/careers",
+    "final_url": "https://www.legacyhealth.org/careers",
+    "status": 200,
+    "platform": "icims",
+    "token": "careers-lhs",
+    "site": null
+  },
+  {
+    "employer": "Kaiser Permanente NW",
+    "domain": "kaiserpermanente.org",
+    "url": "https://kaiserpermanente.org/careers",
+    "final_url": "https://www.kaiserpermanentejobs.org/?kp_shortcut_referrer=kp.org/careers",
+    "status": 200,
+    "platform": "taleo",
+    "token": "kp",
+    "site": null
+  },
+  {
+    "employer": "Cambia Health Solutions",
+    "domain": "cambiahealth.com",
+    "url": "https://cambiahealth.com/careers",
+    "final_url": "https://www.cambiahealth.com/careers/careers-at-cambia/",
+    "status": 200,
+    "platform": "workday",
+    "token": "cambiahealth",
+    "site": "External"
+  },
+  {
+    "employer": "Moda Health",
+    "domain": "modahealth.com",
+    "platform": null
+  },
+  {
+    "employer": "Vacasa",
+    "domain": "vacasa.com",
+    "url": "https://vacasa.com/careers",
+    "final_url": "https://www.vacasa.com:443/careers",
+    "status": 200,
+    "platform": "greenhouse",
+    "token": "casago",
+    "site": null
+  },
+  {
+    "employer": "Jama Software",
+    "domain": "jamasoftware.com",
+    "platform": null
+  },
+  {
+    "employer": "Puppet",
+    "domain": "puppet.com",
+    "platform": null
+  },
+  {
+    "employer": "New Relic",
+    "domain": "newrelic.com",
+    "platform": null
+  },
+  {
+    "employer": "Smarsh",
+    "domain": "smarsh.com",
+    "url": "https://smarsh.com/careers",
+    "final_url": "https://www.smarsh.com/careers/",
+    "status": 200,
+    "platform": "lever",
+    "token": "smarsh",
+    "site": null
+  },
+  {
+    "employer": "Act-On Software",
+    "domain": "act-on.com",
+    "platform": null
+  },
+  {
+    "employer": "Lytics",
+    "domain": "lytics.com",
+    "platform": null
+  },
+  {
+    "employer": "Opal",
+    "domain": "workwithopal.com",
+    "platform": null
+  },
+  {
+    "employer": "Thesis",
+    "domain": "thesisagency.com",
+    "platform": null
+  },
+  {
+    "employer": "CLEAResult",
+    "domain": "clearesult.com",
+    "url": "https://clearesult.com/careers",
+    "final_url": "https://www.clearesult.com/careers",
+    "status": 200,
+    "platform": "workday",
+    "token": "clearesult",
+    "site": "CLEAResult_External_Careers"
+  },
+  {
+    "employer": "Expensify",
+    "domain": "expensify.com",
+    "platform": null
+  },
+  {
+    "employer": "Trimble Viewpoint",
+    "domain": "viewpoint.com",
+    "platform": null
+  },
+  {
+    "employer": "Umpqua Bank",
+    "domain": "umpquabank.com",
+    "platform": null
+  },
+  {
+    "employer": "Radius Recycling",
+    "domain": "radiusrecycling.com",
+    "platform": null
+  },
+  {
+    "employer": "Precision Castparts",
+    "domain": "precast.com",
+    "platform": null
+  },
+  {
+    "employer": "Leatherman",
+    "domain": "leatherman.com",
+    "platform": null
+  },
+  {
+    "employer": "Powell's Books",
+    "domain": "powells.com",
+    "platform": null
+  },
+  {
+    "employer": "Port of Portland",
+    "domain": "portofportland.com",
+    "platform": null
+  },
+  {
+    "employer": "TriMet",
+    "domain": "trimet.org",
+    "platform": null
+  },
+  {
+    "employer": "City of Portland",
+    "domain": "portland.gov",
+    "platform": null
+  },
+  {
+    "employer": "Multnomah County",
+    "domain": "multco.us",
+    "platform": null
+  },
+  {
+    "employer": "Portland State University",
+    "domain": "pdx.edu",
+    "platform": null
+  },
+  {
+    "employer": "Dutch Bros",
+    "domain": "dutchbros.com",
+    "platform": null
+  },
+  {
+    "employer": "Tillamook",
+    "domain": "tillamook.com",
+    "url": "https://tillamook.com/careers",
+    "final_url": "https://www.tillamook.com/careers",
+    "status": 200,
+    "platform": "taleo",
+    "token": "tbe",
+    "site": null
+  },
+  {
+    "employer": "Bonneville Power Administration",
+    "domain": "bpa.gov",
+    "platform": null
+  },
+  {
+    "employer": "Zoomcare",
+    "domain": "zoomcare.com",
+    "platform": null
+  },
+  {
+    "employer": "Ruby Receptionists",
+    "domain": "ruby.com",
+    "platform": null
+  }
+]
