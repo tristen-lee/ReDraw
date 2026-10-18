@@ -1,7 +1,7 @@
 :root {
     --ink: #1c1c1c;
     --muted: #6b6b6b;
-    --line: #d8d8d8;
+    --line: #EEE5BF;
     --accent: #c2410c;
 }
 
@@ -267,9 +267,35 @@ form button:disabled {
     background: #f4f4f4;
 }
 
-/* Shape you draw on the map. Stroke colour is set in map.js, not here. */
-.leaflet-interactive {
+/* While drawing: crosshair cursor, and no browser scroll stealing the touch */
+#map.drawing {
     cursor: crosshair;
+    touch-action: none;
+}
+
+#map.drawing .leaflet-grab,
+#map.drawing .leaflet-interactive {
+    cursor: crosshair;
+}
+
+#draw-button.primary {
+    background: var(--accent);
+}
+
+#clear-button {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+}
+
+.controls button {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
 }
 
 /* Popup box that opens when you click a marker */

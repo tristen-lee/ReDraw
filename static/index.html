@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cupholder</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,9 +15,11 @@
 </header>
 
 <div class="controls">
+    <button id="draw-button" class="primary">Draw your area</button>
+    <button id="clear-button">Clear</button>
     <input type="text" id="job-input" placeholder="Keyword (optional)" autocomplete="off">
     <button id="search-button">Search</button>
-    <span id="status">Use the polygon tool to draw your commute, then search.</span>
+    <span id="status">Draw an area to search inside it.</span>
     <a class="post-link" href="/post.html">Hiring? Post a job free →</a>
 </div>
 
@@ -30,7 +31,6 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="map.js"></script>
 
 </body>

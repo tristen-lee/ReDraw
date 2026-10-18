@@ -1,41 +1,103 @@
-const map = L.map('map').setView([45.85, -122.95], 9);
+const map = L.map('map', { zoomControl: false }).setView([45.85, -122.95], 9);
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
 }).addTo(map);
 
-const drawnItems = new L.FeatureGroup();
-map.addLayer(drawnItems);
-
 const results = L.layerGroup().addTo(map);
+const container = map.getContainer();
 
-const drawControl = new L.Control.Draw({
-    edit: { featureGroup: drawnItems },
-    draw: { polygon: true, polyline: false, marker: false, circle: false, rectangle: false, circlemarker: false }
-});
-map.addControl(drawControl);
+const SIMPLIFY_TOLERANCE = 6;
+const MIN_POINTS = 8;
 
-let currentShape = null;
-
-map.on(L.Draw.Event.CREATED, function (e) {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(e.layer);
-    currentShape = e.layer;
-    runSearch();
-});
-
-map.on(L.Draw.Event.EDITED, runSearch);
-
-map.on(L.Draw.Event.DELETED, function () {
-    currentShape = null;
-    results.clearLayers();
-    setStatus('Draw a shape to search inside it.');
-});
+let drawMode = false;
+let drawing = false;
+let trace = [];
+let traceLine = null;
+let shape = null;
 
 function setStatus(text) {
     document.getElementById('status').textContent = text;
 }
+
+function setDrawMode(on) {
+    drawMode = on;
+    container.classList.toggle('drawing', on);
+    document.getElementById('draw-button').textContent = on ? 'Cancel' : 'Draw your area';
+    if (on) {
+        map.dragging.disable();
+        map.doubleClickZoom.disable();
+        setStatus('Drag across the map to outline where you would work.');
+    } else {
+        map.dragging.enable();
+        map.doubleClickZoom.enable();
+    }
+}
+
+function simplify(latlngs) {
+    const points = latlngs.map(ll => map.latLngToLayerPoint(ll));
+    return L.LineUtil.simplify(points, SIMPLIFY_TOLERANCE).map(p => map.layerPointToLatLng(p));
+}
+
+function beginTrace(event) {
+    if (!drawMode || event.button === 2) return;
+    drawing = true;
+    trace = [map.mouseEventToLatLng(event)];
+    if (traceLine) map.removeLayer(traceLine);
+    traceLine = L.polyline(trace, { color: '#c2410c', weight: 3, dashArray: '4 4' }).addTo(map);
+    container.setPointerCapture?.(event.pointerId);
+}
+
+function extendTrace(event) {
+    if (!drawing) return;
+    event.preventDefault();
+    trace.push(map.mouseEventToLatLng(event));
+    traceLine.setLatLngs(trace);
+}
+
+function endTrace() {
+    if (!drawing) return;
+    drawing = false;
+
+    if (traceLine) {
+        map.removeLayer(traceLine);
+        traceLine = null;
+    }
+
+    if (trace.length < MIN_POINTS) {
+        setStatus('That was too short to be an area — drag a longer outline.');
+        return;
+    }
+
+    const simplified = simplify(trace);
+    if (shape) map.removeLayer(shape);
+    shape = L.polygon(simplified, {
+        color: '#c2410c',
+        weight: 2,
+        fillOpacity: 0.07
+    }).addTo(map);
+
+    setDrawMode(false);
+    runSearch();
+}
+
+container.addEventListener('pointerdown', beginTrace);
+container.addEventListener('pointermove', extendTrace, { passive: false });
+container.addEventListener('pointerup', endTrace);
+container.addEventListener('pointercancel', endTrace);
+
+document.getElementById('draw-button').addEventListener('click', () => setDrawMode(!drawMode));
+
+document.getElementById('clear-button').addEventListener('click', () => {
+    if (shape) map.removeLayer(shape);
+    shape = null;
+    results.clearLayers();
+    setDrawMode(false);
+    setStatus('Draw an area to search inside it.');
+});
 
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({
@@ -50,9 +112,7 @@ function groupByPoint(jobs) {
     for (const job of jobs) {
         for (const location of job.locations) {
             const key = `${location.latitude},${location.longitude}`;
-            if (!groups.has(key)) {
-                groups.set(key, { location, jobs: [] });
-            }
+            if (!groups.has(key)) groups.set(key, { location, jobs: [] });
             groups.get(key).jobs.push(job);
         }
     }
@@ -83,10 +143,9 @@ function popupHtml(group) {
 }
 
 function markerFor(group) {
-    const count = group.jobs.length;
     const icon = L.divIcon({
         className: 'job-marker',
-        html: `<span>${count}</span>`,
+        html: `<span>${group.jobs.length}</span>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14]
     });
@@ -95,17 +154,15 @@ function markerFor(group) {
 }
 
 async function runSearch() {
-    if (!currentShape) {
-        setStatus('Draw a shape first.');
+    if (!shape) {
+        setStatus('Draw an area first.');
         return;
     }
 
-    const button = document.getElementById('search-button');
-    button.disabled = true;
     setStatus('Searching…');
 
     try {
-        const polygon = currentShape.getLatLngs()[0].map(p => [p.lng, p.lat]);
+        const polygon = shape.getLatLngs()[0].map(p => [p.lng, p.lat]);
         const what = document.getElementById('job-input').value;
 
         const response = await fetch('/api/search', {
@@ -123,21 +180,17 @@ async function runSearch() {
         results.clearLayers();
 
         if (!jobs.length) {
-            setStatus('No jobs in that shape. Try a wider area or clear the keyword.');
+            setStatus('No jobs in that area. Try a wider outline or clear the keyword.');
             return;
         }
 
         const groups = groupByPoint(jobs);
-        for (const group of groups) {
-            markerFor(group).addTo(results);
-        }
+        groups.forEach(group => markerFor(group).addTo(results));
 
         const places = groups.length === 1 ? '1 place' : `${groups.length} places`;
         setStatus(`${jobs.length} jobs across ${places}.`);
-    } catch (error) {
-        setStatus('Search failed. Is the server running?');
-    } finally {
-        button.disabled = false;
+    } catch {
+        setStatus('Search failed. Check your connection and try again.');
     }
 }
 
@@ -149,7 +202,6 @@ document.getElementById('job-input').addEventListener('keydown', e => {
 fetch('/api/health')
     .then(r => r.json())
     .then(data => {
-        document.getElementById('freshness').textContent =
-            `${data.mappable_jobs} jobs on the map`;
+        document.getElementById('freshness').textContent = `${data.mappable_jobs} jobs on the map`;
     })
     .catch(() => {});
