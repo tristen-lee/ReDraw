@@ -1,0 +1,26 @@
+name: Nightly ingest
+
+on:
+  schedule:
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+jobs:
+  usajobs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Ingest USAJobs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          USA_JOBS_API_KEY: ${{ secrets.USA_JOBS_API_KEY }}
+          USER_AGENT: ${{ secrets.USER_AGENT }}
+        run: python -m app.ingest
