@@ -150,6 +150,6 @@ fetch('/api/health')
     .then(r => r.json())
     .then(data => {
         document.getElementById('freshness').textContent =
-            `${data.live_jobs} jobs indexed`;
+            `${data.mappable_jobs} jobs on the map`;
     })
     .catch(() => {});

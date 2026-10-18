@@ -141,8 +141,26 @@ def review_job(job_id: int, request: ReviewRequest):
 @app.get("/api/health")
 def health():
     with db.connect() as conn, conn.cursor() as cur:
-        cur.execute("select count(*) from jobs where expired_at is null")
-        live_jobs = cur.fetchone()[0]
+        # "stored" counts everything held; "mappable" is what a drawn shape can
+        # actually return, which is the only number worth showing a visitor.
+        cur.execute(
+            """
+            select
+                count(*) filter (where expired_at is null and status = 'live'),
+                count(*) filter (where expired_at is null and status = 'live' and is_blanket)
+            from jobs
+            """
+        )
+        stored, blanket = cur.fetchone()
+
+        cur.execute(
+            """
+            select count(distinct j.id)
+            from jobs j join job_locations l on l.job_id = j.id
+            where j.expired_at is null and j.status = 'live' and not j.is_blanket
+            """
+        )
+        mappable = cur.fetchone()[0]
         cur.execute(
             """
             select source, finished_at, jobs_found
@@ -153,7 +171,10 @@ def health():
         row = cur.fetchone()
 
     return {
-        "live_jobs": live_jobs,
+        "mappable_jobs": mappable,
+        "stored_jobs": stored,
+        "standing_registers": blanket,
+        "unmappable_jobs": stored - blanket - mappable,
         "last_successful_run": {
             "source": row[0],
             "finished_at": row[1].isoformat() if row[1] else None,
