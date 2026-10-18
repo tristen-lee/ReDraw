@@ -8,6 +8,22 @@ class SearchRequest(BaseModel):
     limit: int = Field(default=500, ge=1, le=2000)
 
 
+class JobSubmission(BaseModel):
+    employer: str = Field(min_length=2, max_length=200)
+    title: str = Field(min_length=2, max_length=200)
+    description: str = Field(min_length=20, max_length=20000)
+    town: str = Field(min_length=2, max_length=120)
+    contact_email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=200)
+    street_address: str | None = Field(default=None, max_length=300)
+    apply_url: str | None = Field(default=None, max_length=500)
+    employment_type: list[str] | None = Field(default=None, max_length=5)
+
+
+class ReviewRequest(BaseModel):
+    approve: bool
+    note: str | None = Field(default=None, max_length=500)
+
+
 class JobLocation(BaseModel):
     raw_location: str | None
     precision: str

@@ -1,12 +1,23 @@
 ### FastAPI entrypoint ###
 
-from fastapi import FastAPI
+import os
+import secrets
+
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.staticfiles import StaticFiles
 
-from app import db
-from app.models import Job, JobLocation, SearchRequest
+from app import db, submissions
+from app.models import Job, JobLocation, JobSubmission, ReviewRequest, SearchRequest
 
 app = FastAPI()
+
+
+def require_admin(x_admin_token: str = Header(default="")):
+    expected = os.environ.get("ADMIN_TOKEN")
+    if not expected:
+        raise HTTPException(503, "Admin access is not configured.")
+    if not secrets.compare_digest(x_admin_token, expected):
+        raise HTTPException(401, "Bad admin token.")
 
 SEARCH_SQL = """
 with shape as (
@@ -20,6 +31,7 @@ from job_locations l
 join jobs j on j.id = l.job_id
 cross join shape s
 where j.expired_at is null
+  and j.status = 'live'
   and ST_Contains(s.geom, l.geom)
   and (%(include_blanket)s::boolean or not j.is_blanket)
   and (
@@ -87,6 +99,38 @@ def search(request: SearchRequest) -> list[Job]:
         )
 
     return list(jobs.values())
+
+
+@app.post("/jobs/submit")
+def submit_job(payload: JobSubmission):
+    with db.connect() as conn, conn.cursor() as cur:
+        result, error = submissions.submit(cur, payload)
+        if result is None:
+            raise HTTPException(422, error or "Could not accept that submission.")
+        conn.commit()
+
+    return {
+        "status": "pending review",
+        "job_id": result["job_id"],
+        "placed_as": result["location"]["precision"],
+        "location": result["location"]["raw"],
+    }
+
+
+@app.get("/admin/pending", dependencies=[Depends(require_admin)])
+def pending_jobs():
+    with db.connect() as conn, conn.cursor() as cur:
+        return submissions.list_pending(cur)
+
+
+@app.post("/admin/review/{job_id}", dependencies=[Depends(require_admin)])
+def review_job(job_id: int, request: ReviewRequest):
+    with db.connect() as conn, conn.cursor() as cur:
+        row = submissions.review(cur, job_id, request.approve, request.note)
+        if row is None:
+            raise HTTPException(404, "No pending job with that id.")
+        conn.commit()
+    return {"job_id": row[0], "status": row[1]}
 
 
 @app.get("/health")
