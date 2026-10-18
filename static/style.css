@@ -234,3 +234,61 @@ form button:disabled {
 .post-link {
     margin-left: auto;
 }
+
+/* ---------------------------------------------------------------
+   Map chrome. Leaflet builds these elements itself, so styling the
+   map means overriding its class names rather than your own markup.
+   Everything below is safe to change.
+   --------------------------------------------------------------- */
+
+/* Tint the basemap itself. Tiles are images, so a filter is the only
+   way to recolor them without paying a tile provider.
+   Try: grayscale(1) / saturate(0.4) / brightness(1.05) / sepia(0.2) */
+.leaflet-tile-pane {
+    filter: saturate(0.75) brightness(1.02);
+}
+
+/* The +/- zoom buttons and the draw toolbar share this container */
+.leaflet-bar {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.leaflet-bar a,
+.leaflet-draw-toolbar a {
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+}
+
+.leaflet-bar a:hover,
+.leaflet-draw-toolbar a:hover {
+    background: #f4f4f4;
+}
+
+/* Shape you draw on the map. Stroke colour is set in map.js, not here. */
+.leaflet-interactive {
+    cursor: crosshair;
+}
+
+/* Popup box that opens when you click a marker */
+.leaflet-popup-content-wrapper {
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.leaflet-popup-content {
+    margin: 12px 14px;
+    font: inherit;
+}
+
+.leaflet-popup-tip {
+    box-shadow: none;
+}
+
+/* Attribution strip, bottom right of the map */
+.leaflet-control-attribution {
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.8);
+}
