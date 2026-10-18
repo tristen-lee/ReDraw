@@ -67,7 +67,7 @@ function popupHtml(group) {
 
     const items = group.jobs.map(job => `
         <li>
-            <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>
+            <a href="${escapeHtml(job.path)}">${escapeHtml(job.title)}</a>
             <span class="employer">${escapeHtml(job.employer || '')}</span>
             <span class="source">via ${escapeHtml(SOURCE_LABELS[job.source] || job.source)}</span>
         </li>

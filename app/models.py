@@ -33,6 +33,7 @@ class JobLocation(BaseModel):
 
 class Job(BaseModel):
     id: int
+    path: str
     source: str
     title: str
     employer: str | None

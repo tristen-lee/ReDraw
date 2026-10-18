@@ -3,11 +3,15 @@
 import os
 import secrets
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
-from app import db, submissions
+from app import db, pages, submissions
 from app.models import Job, JobLocation, JobSubmission, ReviewRequest, SearchRequest
+
+templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 
@@ -77,6 +81,7 @@ def search(request: SearchRequest) -> list[Job]:
         if job is None:
             job = Job(
                 id=job_id,
+                path=f"/jobs/{job_id}/{pages.slugify(f'{title} {raw_location}')}",
                 source=source,
                 title=title,
                 employer=employer,
@@ -157,6 +162,73 @@ def health():
         if row
         else None,
     }
+
+
+def site_base(request: Request):
+    configured = os.environ.get("SITE_BASE_URL")
+    return (configured or str(request.base_url)).rstrip("/")
+
+
+@app.get("/jobs/{job_id}", response_class=HTMLResponse)
+@app.get("/jobs/{job_id}/{slug}", response_class=HTMLResponse)
+def job_page(request: Request, job_id: int, slug: str | None = None):
+    with db.connect() as conn, conn.cursor() as cur:
+        job = pages.load(cur, job_id)
+
+    if job is None:
+        raise HTTPException(404, "That job is no longer listed.")
+
+    canonical = f"{site_base(request)}/jobs/{job['id']}/{job['slug']}"
+    if slug != job["slug"]:
+        return RedirectResponse(canonical, status_code=301)
+
+    return templates.TemplateResponse(
+        request,
+        "job.html",
+        {
+            "job": job,
+            "canonical": canonical,
+            # Standing registers are not vacancies at a place; marking them up as
+            # JobPosting would put low-quality listings in Google's index.
+            "noindex": job["is_blanket"],
+            "structured_data": None if job["is_blanket"] else pages.structured_data(job, canonical),
+        },
+    )
+
+
+@app.get("/sitemap.xml")
+def sitemap(request: Request):
+    base = site_base(request)
+    with db.connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            select j.id, j.title, min(l.raw_location), max(j.updated_at)
+            from jobs j join job_locations l on l.job_id = j.id
+            where j.status = 'live' and j.expired_at is null and not j.is_blanket
+            group by j.id, j.title
+            order by j.id
+            limit 50000
+            """
+        )
+        rows = cur.fetchall()
+
+    urls = "".join(
+        f"<url><loc>{base}/jobs/{job_id}/{pages.slugify(f'{title} {place}')}</loc>"
+        f"<lastmod>{updated.date().isoformat()}</lastmod></url>"
+        for job_id, title, place, updated in rows
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"<url><loc>{base}/</loc></url>{urls}</urlset>"
+    )
+    return Response(xml, media_type="application/xml")
+
+
+@app.get("/robots.txt")
+def robots(request: Request):
+    body = f"User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/\n\nSitemap: {site_base(request)}/sitemap.xml\n"
+    return Response(body, media_type="text/plain")
 
 
 # Without this, an unmatched /api path falls through to the static mount below,

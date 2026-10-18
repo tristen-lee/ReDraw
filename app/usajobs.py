@@ -111,7 +111,9 @@ def normalize(item):
         "url": (descriptor.get("PositionURI") or "").replace(":443", ""),
         "date_posted": descriptor.get("PublicationStartDate"),
         "date_closes": descriptor.get("ApplicationCloseDate"),
-        "employment_type": [s.get("Name") for s in descriptor.get("PositionSchedule") or []],
+        "employment_type": [
+            name for s in descriptor.get("PositionSchedule") or [] if (name := (s.get("Name") or "").strip())
+        ] or None,
         "salary_min": pay.get("MinimumRange"),
         "salary_max": pay.get("MaximumRange"),
         "salary_interval": pay.get("RateIntervalCode"),

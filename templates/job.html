@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ job.title }} — {{ job.employer }} — {{ job.place }} | Cupholder</title>
+    <meta name="description" content="{{ job.meta_description }}">
+    <link rel="canonical" href="{{ canonical }}">
+    {% if noindex %}<meta name="robots" content="noindex,follow">{% endif %}
+    <link rel="stylesheet" href="/style.css">
+    {% if structured_data %}
+    <script type="application/ld+json">{{ structured_data | safe }}</script>
+    {% endif %}
+</head>
+<body class="page">
+
+<header>
+    <h1><a href="/">Cupholder</a></h1>
+</header>
+
+<main class="form-wrap">
+    <article class="posting">
+        <h2>{{ job.title }}</h2>
+        <p class="meta">
+            {{ job.employer }} &middot; {{ job.place }}
+            {% if job.precision == 'exact' %}<span class="exact">exact address</span>
+            {% else %}<span>{{ job.precision }}-level location</span>{% endif %}
+        </p>
+        {% if job.salary_text %}<p class="meta">{{ job.salary_text }}</p>{% endif %}
+        {% if job.date_posted_display %}<p class="meta">Posted {{ job.date_posted_display }}{% if job.date_closes_display %} &middot; closes {{ job.date_closes_display }}{% endif %}</p>{% endif %}
+
+        {% if job.is_blanket %}
+        <p class="notice">This is a standing register, not a vacancy at a single site. The agency lists {{ job.location_count }} possible locations and draws from applicants as openings come up.</p>
+        {% endif %}
+
+        <div class="description">{{ job.description }}</div>
+
+        {% if job.url %}
+        <p class="apply">
+            <a class="apply-button" href="{{ job.url }}" target="_blank" rel="noopener nofollow">
+                Apply on {{ job.source_label }}
+            </a>
+        </p>
+        {% endif %}
+
+        {% if job.other_locations %}
+        <p class="meta">Also listed in: {{ job.other_locations | join(', ') }}{% if job.more_locations %} and {{ job.more_locations }} more{% endif %}.</p>
+        {% endif %}
+    </article>
+
+    <p class="meta"><a href="/">Draw your commute and see what else is nearby →</a></p>
+</main>
+
+<footer>
+    {% if job.source == 'usajobs' %}
+    <span>Listing courtesy of <a href="https://www.usajobs.gov" target="_blank" rel="noopener">USAJOBS</a>. Apply on the original posting.</span>
+    {% endif %}
+</footer>
+
+</body>
+</html>
