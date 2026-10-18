@@ -1,8 +1,11 @@
+/* ============================================================
+   Tokens — change these four and the whole site follows.
+   ============================================================ */
 :root {
-    --ink: #1c1c1c;
+    --ink: #1E2019;
     --muted: #6b6b6b;
-    --line: #EEE5BF;
-    --accent: #c2410c;
+    --line: #d8d8d8;
+    --accent: #2188A1;
 }
 
 * { box-sizing: border-box; }
@@ -13,6 +16,12 @@ body {
     color: var(--ink);
 }
 
+a { color: inherit; }
+
+/* ============================================================
+   Shared layout — header, footer, and the narrow page wrapper
+   used by the post form, review queue, and job pages.
+   ============================================================ */
 header {
     padding: 18px 20px 10px;
 }
@@ -23,53 +32,20 @@ h1 {
     letter-spacing: -0.4px;
 }
 
+header h1 a { text-decoration: none; }
+
 .tagline {
     margin: 4px 0 0;
     color: var(--muted);
 }
 
-.controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 0 20px 12px;
+.page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding-bottom: 60px;
 }
 
-#job-input {
-    padding: 7px 10px;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    font: inherit;
-    min-width: 220px;
-}
-
-#search-button {
-    padding: 5px;
-    padding-inline: 16px;
-    border: 0;
-    border-radius: 4px;
-    background: var(--ink);
-    color: #fff;
-    font: inherit;
-    cursor: pointer;
-}
-
-#search-button:disabled {
-    background: var(--muted);
-    cursor: default;
-}
-
-#status {
-    color: var(--muted);
-}
-
-#map {
-    height: calc(100vh - 190px);
-    min-height: 420px;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-}
+.form-wrap { padding: 0 20px; }
 
 footer {
     display: flex;
@@ -81,7 +57,72 @@ footer {
     font-size: 13px;
 }
 
-footer a { color: inherit; }
+.meta {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.exact {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* ============================================================
+   Map page
+   ============================================================ */
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0 20px 12px;
+}
+
+.controls button {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+#draw-button { background: var(--accent); }
+
+#clear-button {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+}
+
+#job-input {
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font: inherit;
+    min-width: 200px;
+}
+
+#status { color: var(--muted); }
+
+.post-link { margin-left: auto; }
+
+#map {
+    height: calc(100vh - 190px);
+    min-height: 420px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+/* While drawing, touch-action stops the phone scrolling the page
+   instead of tracing a shape. Without it mobile drawing is broken. */
+#map.drawing {
+    cursor: crosshair;
+    touch-action: none;
+}
+
+#map.drawing .leaflet-grab { cursor: crosshair; }
 
 .job-marker {
     display: grid;
@@ -105,14 +146,8 @@ footer a { color: inherit; }
     font-size: 12px;
 }
 
-.popup ul {
-    margin: 0;
-    padding-left: 16px;
-}
-
-.popup li {
-    margin-bottom: 7px;
-}
+.popup ul { margin: 0; padding-left: 16px; }
+.popup li { margin-bottom: 7px; }
 
 .popup .employer,
 .popup .source {
@@ -121,21 +156,45 @@ footer a { color: inherit; }
     font-size: 12px;
 }
 
-header h1 a {
-    color: inherit;
-    text-decoration: none;
+/* ============================================================
+   Leaflet's own elements. It builds these itself, so styling the
+   map means overriding its class names rather than our markup.
+   ============================================================ */
+
+/* Tiles are images, so a filter is the only way to recolor the
+   basemap. Try grayscale(1), saturate(0.4), sepia(0.2). */
+.leaflet-tile-pane { filter: saturate(0.75) brightness(1.02); }
+
+.leaflet-bar {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: none;
+    overflow: hidden;
 }
 
-.page {
-    max-width: 680px;
-    margin: 0 auto;
-    padding-bottom: 60px;
+.leaflet-bar a {
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
 }
 
-.form-wrap {
-    padding: 0 20px;
+.leaflet-bar a:hover { background: #f4f4f4; }
+
+.leaflet-popup-content-wrapper {
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
 }
 
+.leaflet-popup-content { margin: 12px 14px; font: inherit; }
+.leaflet-popup-tip { box-shadow: none; }
+
+.leaflet-control-attribution {
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================================
+   Forms — the employer post page and the review queue
+   ============================================================ */
 form label,
 #auth label {
     display: block;
@@ -156,9 +215,7 @@ form textarea,
     font-weight: 400;
 }
 
-form textarea {
-    resize: vertical;
-}
+form textarea { resize: vertical; }
 
 form small {
     display: block;
@@ -167,10 +224,7 @@ form small {
     font-weight: 400;
 }
 
-.optional {
-    color: var(--muted);
-    font-weight: 400;
-}
+.optional { color: var(--muted); font-weight: 400; }
 
 form button,
 #auth button {
@@ -183,9 +237,7 @@ form button,
     cursor: pointer;
 }
 
-form button:disabled {
-    background: var(--muted);
-}
+form button:disabled { background: var(--muted); }
 
 #form-status,
 #queue-status {
@@ -203,27 +255,10 @@ form button:disabled {
     margin-bottom: 12px;
 }
 
-.queued h3 {
-    margin: 0 0 4px;
-    font-size: 16px;
-}
+.queued h3 { margin: 0 0 4px; font-size: 16px; }
+.queued .meta { margin: 0 0 4px; }
 
-.queued .meta {
-    margin: 0 0 4px;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-.queued .exact {
-    color: var(--accent);
-    font-weight: 600;
-}
-
-.actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-}
+.actions { display: flex; gap: 8px; margin-top: 8px; }
 
 .actions .reject {
     background: #fff;
@@ -231,90 +266,39 @@ form button:disabled {
     border: 1px solid var(--line);
 }
 
-.post-link {
-    margin-left: auto;
+/* ============================================================
+   Job pages — the 71 URLs Google indexes
+   ============================================================ */
+.posting h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    line-height: 1.25;
 }
 
-/* ---------------------------------------------------------------
-   Map chrome. Leaflet builds these elements itself, so styling the
-   map means overriding its class names rather than your own markup.
-   Everything below is safe to change.
-   --------------------------------------------------------------- */
+.posting .meta { margin: 0 0 4px; }
 
-/* Tint the basemap itself. Tiles are images, so a filter is the only
-   way to recolor them without paying a tile provider.
-   Try: grayscale(1) / saturate(0.4) / brightness(1.05) / sepia(0.2) */
-.leaflet-tile-pane {
-    filter: saturate(0.75) brightness(1.02);
+.notice {
+    margin: 14px 0;
+    padding: 10px 12px;
+    border-left: 3px solid var(--line);
+    background: #fafafa;
+    color: var(--muted);
+    font-size: 14px;
 }
 
-/* The +/- zoom buttons and the draw toolbar share this container */
-.leaflet-bar {
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    box-shadow: none;
-    overflow: hidden;
+.description {
+    margin: 18px 0;
+    white-space: pre-wrap;
 }
 
-.leaflet-bar a,
-.leaflet-draw-toolbar a {
-    border-bottom: 1px solid var(--line);
-    color: var(--ink);
-}
+.apply { margin: 22px 0; }
 
-.leaflet-bar a:hover,
-.leaflet-draw-toolbar a:hover {
-    background: #f4f4f4;
-}
-
-/* While drawing: crosshair cursor, and no browser scroll stealing the touch */
-#map.drawing {
-    cursor: crosshair;
-    touch-action: none;
-}
-
-#map.drawing .leaflet-grab,
-#map.drawing .leaflet-interactive {
-    cursor: crosshair;
-}
-
-#draw-button.primary {
-    background: var(--accent);
-}
-
-#clear-button {
-    background: #fff;
-    color: var(--ink);
-    border: 1px solid var(--line);
-}
-
-.controls button {
-    padding: 7px 14px;
-    border: 0;
+.apply-button {
+    display: inline-block;
+    padding: 10px 20px;
     border-radius: 4px;
-    background: var(--ink);
+    background: var(--accent);
     color: #fff;
-    font: inherit;
-    cursor: pointer;
-}
-
-/* Popup box that opens when you click a marker */
-.leaflet-popup-content-wrapper {
-    border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
-}
-
-.leaflet-popup-content {
-    margin: 12px 14px;
-    font: inherit;
-}
-
-.leaflet-popup-tip {
-    box-shadow: none;
-}
-
-/* Attribution strip, bottom right of the map */
-.leaflet-control-attribution {
-    font-size: 11px;
-    background: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-weight: 600;
 }
