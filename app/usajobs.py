@@ -85,6 +85,26 @@ def in_region(location):
     )
 
 
+def as_text(value):
+    if isinstance(value, list):
+        return "\n".join(part for part in value if isinstance(part, str) and part.strip())
+    return value if isinstance(value, str) else ""
+
+
+def build_description(descriptor, details):
+    # JobSummary alone is capped around 500 characters. Duties and
+    # qualifications carry the real content and are published verbatim.
+    sections = [
+        (None, as_text(details.get("JobSummary"))),
+        ("Duties", as_text(details.get("MajorDuties"))),
+        ("Qualifications", as_text(descriptor.get("QualificationSummary"))),
+        ("Requirements", as_text(details.get("Requirements"))),
+        ("Education", as_text(details.get("Education"))),
+    ]
+    blocks = [f"{heading}\n{body}".strip() if heading else body for heading, body in sections if body.strip()]
+    return "\n\n".join(blocks)
+
+
 def normalize(item):
     descriptor = item.get("MatchedObjectDescriptor") or {}
     pay = (descriptor.get("PositionRemuneration") or [{}])[0]
@@ -117,7 +137,8 @@ def normalize(item):
         "salary_min": pay.get("MinimumRange"),
         "salary_max": pay.get("MaximumRange"),
         "salary_interval": pay.get("RateIntervalCode"),
-        "description": details.get("JobSummary"),
+        "description": build_description(descriptor, details),
+        "is_remote": bool(details.get("RemoteIndicator")),
         "locations": locations,
         "unplaced_locations": [
             location.get("LocationName") for location in raw_locations if not has_coordinates(location)

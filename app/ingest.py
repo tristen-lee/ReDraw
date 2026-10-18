@@ -16,13 +16,13 @@ UPSERT_JOB = """
 insert into jobs (
     source, source_id, employer_name_raw, title, description, url,
     date_posted, date_closes, employment_type,
-    salary_min, salary_max, salary_interval, is_blanket, raw,
+    salary_min, salary_max, salary_interval, is_blanket, is_remote, raw,
     last_seen_at, updated_at, expired_at
 )
 values (
     %(source)s, %(source_id)s, %(employer_name)s, %(title)s, %(description)s, %(url)s,
     %(date_posted)s, %(date_closes)s, %(employment_type)s,
-    %(salary_min)s, %(salary_max)s, %(salary_interval)s, %(is_blanket)s, %(raw)s,
+    %(salary_min)s, %(salary_max)s, %(salary_interval)s, %(is_blanket)s, %(is_remote)s, %(raw)s,
     now(), now(), null
 )
 on conflict (source, source_id) do update set
@@ -37,6 +37,7 @@ on conflict (source, source_id) do update set
     salary_max = excluded.salary_max,
     salary_interval = excluded.salary_interval,
     is_blanket = excluded.is_blanket,
+    is_remote = excluded.is_remote,
     raw = excluded.raw,
     last_seen_at = now(),
     updated_at = now(),
@@ -74,6 +75,7 @@ def upsert_job(cur, job):
             "salary_max": blank_to_none(job.get("salary_max")),
             "salary_interval": job.get("salary_interval"),
             "is_blanket": job.get("total_locations", 0) >= BLANKET_LOCATION_THRESHOLD,
+            "is_remote": bool(job.get("is_remote")),
             "raw": Jsonb(job.get("raw")),
         },
     )
