@@ -25,7 +25,7 @@ form.addEventListener('submit', async event => {
     }
 
     try {
-        const response = await fetch('/jobs/submit', {
+        const response = await fetch('/api/jobs/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)

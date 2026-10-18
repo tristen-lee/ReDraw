@@ -108,7 +108,7 @@ async function runSearch() {
         const polygon = currentShape.getLatLngs()[0].map(p => [p.lng, p.lat]);
         const what = document.getElementById('job-input').value;
 
-        const response = await fetch('/search', {
+        const response = await fetch('/api/search', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ polygon, what })
@@ -146,7 +146,7 @@ document.getElementById('job-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') runSearch();
 });
 
-fetch('/health')
+fetch('/api/health')
     .then(r => r.json())
     .then(data => {
         document.getElementById('freshness').textContent =

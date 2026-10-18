@@ -16,7 +16,7 @@ async function loadQueue() {
     queueStatus.className = '';
     queueStatus.textContent = 'Loading…';
 
-    const response = await fetch('/admin/pending', { headers: { 'X-Admin-Token': token() } });
+    const response = await fetch('/api/admin/pending', { headers: { 'X-Admin-Token': token() } });
 
     if (response.status === 401) {
         sessionStorage.removeItem('cupholder_admin');
@@ -65,7 +65,7 @@ queue.addEventListener('click', async event => {
     const card = button.closest('.queued');
     card.querySelectorAll('button').forEach(b => (b.disabled = true));
 
-    const response = await fetch(`/admin/review/${card.dataset.id}`, {
+    const response = await fetch(`/api/admin/review/${card.dataset.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token() },
         body: JSON.stringify({ approve: button.dataset.approve === '1' })

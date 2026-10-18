@@ -52,7 +52,7 @@ def polygon_wkt(points):
     return f"POLYGON(({coords}))"
 
 
-@app.post("/search")
+@app.post("/api/search")
 def search(request: SearchRequest) -> list[Job]:
     what = (request.what or "").strip() or None
     params = {
@@ -101,7 +101,7 @@ def search(request: SearchRequest) -> list[Job]:
     return list(jobs.values())
 
 
-@app.post("/jobs/submit")
+@app.post("/api/jobs/submit")
 def submit_job(payload: JobSubmission):
     with db.connect() as conn, conn.cursor() as cur:
         result, error = submissions.submit(cur, payload)
@@ -117,13 +117,13 @@ def submit_job(payload: JobSubmission):
     }
 
 
-@app.get("/admin/pending", dependencies=[Depends(require_admin)])
+@app.get("/api/admin/pending", dependencies=[Depends(require_admin)])
 def pending_jobs():
     with db.connect() as conn, conn.cursor() as cur:
         return submissions.list_pending(cur)
 
 
-@app.post("/admin/review/{job_id}", dependencies=[Depends(require_admin)])
+@app.post("/api/admin/review/{job_id}", dependencies=[Depends(require_admin)])
 def review_job(job_id: int, request: ReviewRequest):
     with db.connect() as conn, conn.cursor() as cur:
         row = submissions.review(cur, job_id, request.approve, request.note)
@@ -133,7 +133,7 @@ def review_job(job_id: int, request: ReviewRequest):
     return {"job_id": row[0], "status": row[1]}
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     with db.connect() as conn, conn.cursor() as cur:
         cur.execute("select count(*) from jobs where expired_at is null")
@@ -157,6 +157,13 @@ def health():
         if row
         else None,
     }
+
+
+# Without this, an unmatched /api path falls through to the static mount below,
+# which answers any non-GET with a 405 that looks like a method bug.
+@app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+def unknown_api_route(rest: str):
+    raise HTTPException(404, f"No API route at /api/{rest}")
 
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
