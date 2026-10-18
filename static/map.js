@@ -1,60 +1,155 @@
-// Leaflet //
+const map = L.map('map').setView([45.85, -122.95], 9);
 
-const map = L.map('map').setView([45.52, -122.68], 12);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors' 
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    maxZoom: 19
 }).addTo(map);
-
-// Leaflet.draw //
 
 const drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+const results = L.layerGroup().addTo(map);
+
 const drawControl = new L.Control.Draw({
     edit: { featureGroup: drawnItems },
-    draw: {polygon: true, marker: false, circle: false, rectangle: false, polyline: false }
-
+    draw: { polygon: true, polyline: false, marker: false, circle: false, rectangle: false, circlemarker: false }
 });
 map.addControl(drawControl);
 
+let currentShape = null;
 
-let currentShape;
 map.on(L.Draw.Event.CREATED, function (e) {
-    const layer = e.layer;
-    drawnItems.addLayer(layer);
-    currentShape = layer;
+    drawnItems.clearLayers();
+    drawnItems.addLayer(e.layer);
+    currentShape = e.layer;
+    runSearch();
 });
-// HTTP Request Spot //
 
-async function runSearch() {
-    const button = document.getElementById('search-button');
-    button.disabled = true;
-    button.textContent = 'Searching...';
+map.on(L.Draw.Event.EDITED, runSearch);
 
-    try {
-        const what = document.getElementById('job-input').value;
+map.on(L.Draw.Event.DELETED, function () {
+    currentShape = null;
+    results.clearLayers();
+    setStatus('Draw a shape to search inside it.');
+});
 
-        const points = currentShape.getLatLngs()[0];
-        const polygon = points.map(point => [point.lng, point.lat]);
+function setStatus(text) {
+    document.getElementById('status').textContent = text;
+}
 
-        const response = await fetch('http://127.0.0.1:8000/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ what, polygon })
-        });
-        const jobs = await response.json();
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
 
-        for (const job of jobs) {
-            L.marker([job.latitude, job.longitude])
-                .addTo(map)
-                .bindPopup(`<b>${job.title}</b><br>${job.company}<br><a href="${job.url}" target="_blank">Apply</a>`);
+const SOURCE_LABELS = { usajobs: 'USAJOBS', lever: 'Lever', direct: 'Posted directly' };
+
+function groupByPoint(jobs) {
+    const groups = new Map();
+    for (const job of jobs) {
+        for (const location of job.locations) {
+            const key = `${location.latitude},${location.longitude}`;
+            if (!groups.has(key)) {
+                groups.set(key, { location, jobs: [] });
+            }
+            groups.get(key).jobs.push(job);
         }
     }
+    return [...groups.values()];
+}
 
-    finally { 
-        button.disabled =false; button.textContent='Search'
-}}
+function popupHtml(group) {
+    const place = escapeHtml(group.location.raw_location || 'Unknown location');
+    const precision = group.location.precision === 'exact'
+        ? 'exact address'
+        : `${group.location.precision}-level location`;
 
+    const items = group.jobs.map(job => `
+        <li>
+            <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>
+            <span class="employer">${escapeHtml(job.employer || '')}</span>
+            <span class="source">via ${escapeHtml(SOURCE_LABELS[job.source] || job.source)}</span>
+        </li>
+    `).join('');
+
+    return `
+        <div class="popup">
+            <h3>${place}</h3>
+            <p class="precision">${group.jobs.length} job${group.jobs.length === 1 ? '' : 's'} &middot; ${precision}</p>
+            <ul>${items}</ul>
+        </div>
+    `;
+}
+
+function markerFor(group) {
+    const count = group.jobs.length;
+    const icon = L.divIcon({
+        className: 'job-marker',
+        html: `<span>${count}</span>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+    return L.marker([group.location.latitude, group.location.longitude], { icon })
+        .bindPopup(popupHtml(group), { maxHeight: 320 });
+}
+
+async function runSearch() {
+    if (!currentShape) {
+        setStatus('Draw a shape first.');
+        return;
+    }
+
+    const button = document.getElementById('search-button');
+    button.disabled = true;
+    setStatus('Searching…');
+
+    try {
+        const polygon = currentShape.getLatLngs()[0].map(p => [p.lng, p.lat]);
+        const what = document.getElementById('job-input').value;
+
+        const response = await fetch('/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ polygon, what })
+        });
+
+        if (!response.ok) {
+            setStatus(`Search failed (${response.status}).`);
+            return;
+        }
+
+        const jobs = await response.json();
+        results.clearLayers();
+
+        if (!jobs.length) {
+            setStatus('No jobs in that shape. Try a wider area or clear the keyword.');
+            return;
+        }
+
+        const groups = groupByPoint(jobs);
+        for (const group of groups) {
+            markerFor(group).addTo(results);
+        }
+
+        const places = groups.length === 1 ? '1 place' : `${groups.length} places`;
+        setStatus(`${jobs.length} jobs across ${places}.`);
+    } catch (error) {
+        setStatus('Search failed. Is the server running?');
+    } finally {
+        button.disabled = false;
+    }
+}
 
 document.getElementById('search-button').addEventListener('click', runSearch);
+document.getElementById('job-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runSearch();
+});
+
+fetch('/health')
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('freshness').textContent =
+            `${data.live_jobs} jobs indexed`;
+    })
+    .catch(() => {});

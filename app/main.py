@@ -42,11 +42,12 @@ def polygon_wkt(points):
 
 @app.post("/search")
 def search(request: SearchRequest) -> list[Job]:
+    what = (request.what or "").strip() or None
     params = {
         "wkt": polygon_wkt(request.polygon),
         "include_blanket": request.include_blanket,
-        "what": request.what,
-        "pattern": f"%{request.what}%" if request.what else None,
+        "what": what,
+        "pattern": f"%{what}%" if what else None,
         "limit": request.limit,
     }
 

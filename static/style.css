@@ -1,9 +1,122 @@
-/* styles — build order step 4 */
+:root {
+    --ink: #1c1c1c;
+    --muted: #6b6b6b;
+    --line: #d8d8d8;
+    --accent: #c2410c;
+}
 
-#map {
-    height: 400px;
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+}
+
+header {
+    padding: 18px 20px 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: -0.4px;
+}
+
+.tagline {
+    margin: 4px 0 0;
+    color: var(--muted);
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0 20px 12px;
+}
+
+#job-input {
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font: inherit;
+    min-width: 220px;
 }
 
 #search-button {
-    size: 100px;
+    padding: 5px;
+    padding-inline: 16px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+#search-button:disabled {
+    background: var(--muted);
+    cursor: default;
+}
+
+#status {
+    color: var(--muted);
+}
+
+#map {
+    height: calc(100vh - 190px);
+    min-height: 420px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 20px 20px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+footer a { color: inherit; }
+
+.job-marker {
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 0 0 2px #fff;
+}
+
+.popup h3 {
+    margin: 0 0 2px;
+    font-size: 15px;
+}
+
+.popup .precision {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.popup ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.popup li {
+    margin-bottom: 7px;
+}
+
+.popup .employer,
+.popup .source {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
 }
