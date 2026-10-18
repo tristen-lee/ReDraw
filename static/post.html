@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post a job — Cupholder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="page">
+
+<header>
+    <h1><a href="/">Cupholder</a></h1>
+    <p class="tagline">Free for local employers. No account, no cost, no catch.</p>
+</header>
+
+<main class="form-wrap">
+    <form id="post-form" novalidate>
+        <label>
+            Employer
+            <input name="employer" required maxlength="200" placeholder="Arcadia Paper Mills">
+        </label>
+
+        <label>
+            Job title
+            <input name="title" required maxlength="200" placeholder="Industrial Electrician">
+        </label>
+
+        <label>
+            Town
+            <input name="town" required maxlength="120" placeholder="St. Helens, OR">
+            <small>Town and state. Required.</small>
+        </label>
+
+        <label>
+            Street address <span class="optional">optional</span>
+            <input name="street_address" maxlength="300" placeholder="1721 Columbia Blvd">
+            <small>Include it and the job gets its own pin instead of a dot over the whole town.</small>
+        </label>
+
+        <label>
+            Description
+            <textarea name="description" required rows="8" maxlength="20000"
+                      placeholder="What the job is, what it pays, what shift, what you need from an applicant."></textarea>
+            <small>At least a couple of sentences.</small>
+        </label>
+
+        <label>
+            How to apply <span class="optional">optional</span>
+            <input name="apply_url" maxlength="500" placeholder="https://… or mailto:hiring@…">
+        </label>
+
+        <label>
+            Your email
+            <input name="contact_email" type="email" required maxlength="200" placeholder="hiring@example.com">
+            <small>Not shown publicly. Used to reach you about the listing.</small>
+        </label>
+
+        <button type="submit">Submit for review</button>
+        <p id="form-status"></p>
+    </form>
+</main>
+
+<script src="post.js"></script>
+
+</body>
+</html>

@@ -120,3 +120,117 @@ footer a { color: inherit; }
     color: var(--muted);
     font-size: 12px;
 }
+
+header h1 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+}
+
+.form-wrap {
+    padding: 0 20px;
+}
+
+form label,
+#auth label {
+    display: block;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+form input,
+form textarea,
+#auth input {
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font: inherit;
+    font-weight: 400;
+}
+
+form textarea {
+    resize: vertical;
+}
+
+form small {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.optional {
+    color: var(--muted);
+    font-weight: 400;
+}
+
+form button,
+#auth button {
+    padding: 9px 18px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+form button:disabled {
+    background: var(--muted);
+}
+
+#form-status,
+#queue-status {
+    margin-top: 12px;
+    color: var(--muted);
+}
+
+.ok { color: #15803d; }
+.error { color: #b91c1c; }
+
+.queued {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.queued h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+}
+
+.queued .meta {
+    margin: 0 0 4px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.queued .exact {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.actions .reject {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+}
+
+.post-link {
+    margin-left: auto;
+}
