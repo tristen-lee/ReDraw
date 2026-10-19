@@ -10,6 +10,9 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const results = L.layerGroup().addTo(map);
 const container = map.getContainer();
 
+const BRAND = getComputedStyle(document.documentElement)
+    .getPropertyValue('--brand').trim() || '#2188A1';
+
 const SIMPLIFY_TOLERANCE = 6;
 const MIN_POINTS = 8;
 
@@ -47,7 +50,7 @@ function beginTrace(event) {
     drawing = true;
     trace = [map.mouseEventToLatLng(event)];
     if (traceLine) map.removeLayer(traceLine);
-    traceLine = L.polyline(trace, { color: '#c2410c', weight: 3, dashArray: '4 4' }).addTo(map);
+    traceLine = L.polyline(trace, { color: BRAND, weight: 3, dashArray: '4 4' }).addTo(map);
     container.setPointerCapture?.(event.pointerId);
 }
 
@@ -75,7 +78,7 @@ function endTrace() {
     const simplified = simplify(trace);
     if (shape) map.removeLayer(shape);
     shape = L.polygon(simplified, {
-        color: '#c2410c',
+        color: BRAND,
         weight: 2,
         fillOpacity: 0.07
     }).addTo(map);

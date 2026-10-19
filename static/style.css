@@ -1,8 +1,8 @@
 :root {
-    --ink: #1E2019;
-    --muted: #6b6b6b;
-    --line: #d8d8d8;
-    --accent: #2188A1;
+    --text: #1E2019;
+    --text-light: #6b6b6b;
+    --border: #d8d8d8;
+    --brand: #2188A1;
 }
 
 * { box-sizing: border-box; }
@@ -10,7 +10,7 @@
 body {
     margin: 0;
     font: 15px/1.5 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    color: var(--ink);
+    color: var(--text);
 }
 
 a { color: inherit; }
@@ -36,7 +36,7 @@ header h1 a { text-decoration: none; }
 
 .tagline {
     margin: 4px 0 0;
-    color: var(--muted);
+    color: var(--text-light);
 }
 
 .page {
@@ -53,17 +53,17 @@ footer {
     gap: 16px;
     flex-wrap: wrap;
     padding: 12px 20px 20px;
-    color: var(--muted);
+    color: var(--text-light);
     font-size: 13px;
 }
 
 .meta {
-    color: var(--muted);
+    color: var(--text-light);
     font-size: 13px;
 }
 
 .exact {
-    color: var(--accent);
+    color: var(--brand);
     font-weight: 600;
 }
 
@@ -82,37 +82,37 @@ footer {
     padding: 7px 14px;
     border: 0;
     border-radius: 4px;
-    background: var(--ink);
+    background: var(--text);
     color: #fff;
     font: inherit;
     cursor: pointer;
 }
 
-#draw-button { background: var(--accent); }
+#draw-button { background: var(--brand); }
 
 #clear-button {
     background: #fff;
-    color: var(--ink);
-    border: 1px solid var(--line);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
 #job-input {
     padding: 7px 10px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
     border-radius: 4px;
     font: inherit;
     min-width: 200px;
 }
 
-#status { color: var(--muted); }
+#status { color: var(--text-light); }
 
 .post-link { margin-left: auto; }
 
 #map {
     height: calc(100vh - 190px);
     min-height: 420px;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 #map.drawing {
@@ -125,7 +125,7 @@ footer {
 .job-marker {
     display: grid;
     place-items: center;
-    background: var(--accent);
+    background: var(--brand);
     color: #fff;
     border-radius: 50%;
     font-size: 12px;
@@ -140,7 +140,7 @@ footer {
 
 .popup .precision {
     margin: 0 0 8px;
-    color: var(--muted);
+    color: var(--text-light);
     font-size: 12px;
 }
 
@@ -150,7 +150,7 @@ footer {
 .popup .employer,
 .popup .source {
     display: block;
-    color: var(--muted);
+    color: var(--text-light);
     font-size: 12px;
 }
 
@@ -164,15 +164,15 @@ footer {
 .leaflet-tile-pane { filter: saturate(0.75) brightness(1.02); }
 
 .leaflet-bar {
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: none;
     overflow: hidden;
 }
 
 .leaflet-bar a {
-    border-bottom: 1px solid var(--line);
-    color: var(--ink);
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
 }
 
 .leaflet-bar a:hover { background: #f4f4f4; }
@@ -207,7 +207,7 @@ form textarea,
     width: 100%;
     margin-top: 5px;
     padding: 8px 10px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
     border-radius: 4px;
     font: inherit;
     font-weight: 400;
@@ -218,36 +218,36 @@ form textarea { resize: vertical; }
 form small {
     display: block;
     margin-top: 4px;
-    color: var(--muted);
+    color: var(--text-light);
     font-weight: 400;
 }
 
-.optional { color: var(--muted); font-weight: 400; }
+.optional { color: var(--text-light); font-weight: 400; }
 
 form button,
 #auth button {
     padding: 9px 18px;
     border: 0;
     border-radius: 4px;
-    background: var(--ink);
+    background: var(--text);
     color: #fff;
     font: inherit;
     cursor: pointer;
 }
 
-form button:disabled { background: var(--muted); }
+form button:disabled { background: var(--text-light); }
 
 #form-status,
 #queue-status {
     margin-top: 12px;
-    color: var(--muted);
+    color: var(--text-light);
 }
 
 .ok { color: #15803d; }
 .error { color: #b91c1c; }
 
 .queued {
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 12px 14px;
     margin-bottom: 12px;
@@ -260,8 +260,8 @@ form button:disabled { background: var(--muted); }
 
 .actions .reject {
     background: #fff;
-    color: var(--ink);
-    border: 1px solid var(--line);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
 /* ============================================================
@@ -278,9 +278,9 @@ form button:disabled { background: var(--muted); }
 .notice {
     margin: 14px 0;
     padding: 10px 12px;
-    border-left: 3px solid var(--line);
+    border-left: 3px solid var(--border);
     background: #fafafa;
-    color: var(--muted);
+    color: var(--text-light);
     font-size: 14px;
 }
 
@@ -295,7 +295,7 @@ form button:disabled { background: var(--muted); }
     display: inline-block;
     padding: 10px 20px;
     border-radius: 4px;
-    background: var(--accent);
+    background: var(--brand);
     color: #fff;
     text-decoration: none;
     font-weight: 600;

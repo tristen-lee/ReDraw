@@ -16,6 +16,17 @@ templates = Jinja2Templates(directory="templates")
 app = FastAPI()
 
 
+# Browsers happily serve a stale map.js for hours, which shows up as a 405
+# when the cached copy calls a route that has since moved. "no-cache" still
+# caches, it just forces a revalidation, so an unchanged file costs a 304.
+@app.middleware("http")
+async def revalidate_static(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.endswith((".js", ".css", ".html")) or request.url.path == "/":
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 def require_admin(x_admin_token: str = Header(default="")):
     expected = os.environ.get("ADMIN_TOKEN")
     if not expected:

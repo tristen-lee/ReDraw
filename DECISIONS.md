@@ -1,128 +1,88 @@
 # Decisions log
 
-## 2026-09-23 — Adzuna over scraping
-Decided: use Adzuna's licensed API instead of scraping Indeed/LinkedIn.
-Why: scraping the big boards directly violates their ToS — real legal/blocking
-risk for zero benefit. Adzuna is a legitimate licensed data source, so the
-corridor-search feature is built on solid legal ground instead of something
-that gets shut down the moment it gets attention.
+## 2026-09-23 — Adzuna over scraping the big boards
+Scraping Indeed/LinkedIn violates their ToS. Adzuna is licensed and legally clean.
 
 ## 2026-09-23 — SQLite now, Postgres later
-Decided: start on SQLite, not Postgres.
-Why: no concurrent multi-user writes to worry about yet, and SQLite has
-zero setup friction while the actual unproven part of this project — does
-the geospatial filtering work and is it useful — gets validated. Migration
-to Postgres is a well-understood path if/when real usage demands it. Not
-worth the setup cost before there's a reason.
+No concurrent writes yet, zero setup friction, and the unproven part is the geospatial filtering, not the database.
 
-## 2026-09-23 — point-in-polygon filtering in app code (Shapely), not the DB
-Decided: filter job coordinates against the drawn shape in Python with
-Shapely, not as a spatial DB query (e.g. PostGIS).
-Why: Adzuna returns small result sets per query (dozens to low hundreds).
-In-memory filtering is simpler, fast enough, and doesn't require standing
-up PostGIS to solve a scale problem that doesn't exist yet.
+## 2026-09-23 — point-in-polygon in Python (Shapely), not the DB
+Adzuna returns dozens to low hundreds of results per query. In-memory filtering is fast enough and doesn't need PostGIS.
 
-## 2026-09-23 — live Adzuna proxy vs. caching/own listings store
-Decided: MVP calls Adzuna live per search. Before any public launch, add a
-short-TTL cache (~15-60 min) keyed on the query, to avoid paying for
-duplicate/near-duplicate searches.
-Why: live-per-search is the simplest version to prove the concept works at
-all. Known limitation: Adzuna's free tier is 250 calls/day, 1000/week,
-2500/month — that ceiling is easy to hit with real traffic, especially a
-traffic spike from one social post. A short cache stretches the budget
-cheaply. Explicitly decided AGAINST building a permanent local copy of
-Adzuna's data for now — their ToS prohibits "aggregation... to deliver any
-ongoing work," and a persistent warehouse of their data is a lot closer to
-that violation than a short-lived cache is. Revisit only if this becomes a
-real product with its own licensing conversation.
+## 2026-09-23 — live Adzuna proxy, with a short cache before launch
+Simplest version that proves the concept. Their free tier is 250/day and a single Facebook post could burn it in hours.
 
-## 2026-09-23 — Adzuna commercial/freemium use needs a separate license
-Decided: treat "turn this into a real, many-user product" as a
-business-development problem, not a scaling problem.
-Why: Adzuna's ToS caps commercial use at a 14-day trial; anything beyond
-that (which freemium would be) needs a negotiated license agreement
-directly with them. Scaling the code doesn't get around this — it's a
-conversation to have with Adzuna, separately from anything built here.
+## 2026-09-23 — commercial Adzuna use is a business problem, not a scaling one
+Their ToS caps commercial use at a 14-day trial. More code doesn't fix that; a negotiated license does.
 
-## 2026-09-23 — rate limits vs. Facebook launch
-Decided: before posting publicly, (1) add the short-TTL query cache above,
-(2) optionally pull in a supplementary free source with no shared quota —
-Greenhouse/Lever public board endpoints are per-company, not rate-limited
-against Adzuna's budget, (3) email Adzuna ahead of time asking for a
-temporary limit bump for a testing/demo launch.
-Why: a single Facebook post can spike traffic fast enough to burn the
-daily (250) or weekly (1000) cap in hours, locking the demo out mid-launch.
-These three mitigations cost little and avoid that failure mode without
-committing to the bigger own-database rebuild.
+## 2026-09-24 — Adzuna is a prototyping source, not the final one
+Three different Portland employers came back with identical lat/long to six decimals. Their coordinates are named-area reference points, not job locations — which undermines the one thing this product is supposed to do better.
 
-## 2026-09-24 — Adzuna is a prototyping data source, not the final one
-Decided: keep using Adzuna to build and prove the corridor-search mechanics
-(API call, Shapely point-in-polygon filtering, the full pipeline end to
-end), but don't treat it as the permanent backend. Real v2 data comes from
-company ATS boards (Greenhouse, Lever, etc.) and/or schema.org JobPosting
-data pulled from career pages, geocoded properly (e.g. Census Bureau
-Geocoder for US addresses), with data precision labeled in the UI so a
-verified-address pin and an approximate-area pin don't look the same.
-Why: pulled a real Adzuna response and checked it — three different
-companies (Autodesk, Amazon, Curtiss-Wright), all tagged "Portland,
-Multnomah County," came back with the exact same lat/long to 6 decimal
-places. A fourth Portland-tagged listing had a different point entirely.
-That means Adzuna's coordinates are pinned to a named-area reference point,
-not the actual job location — the point-in-polygon math is exact, but the
-input data isn't. Since ReDraw's whole pitch is being more precise than a
-city+radius search, shipping on Adzuna's geocoding long-term would quietly
-undermine the one thing this product is supposed to do better than
-everyone else. Adzuna's still fine, and still legally clean, for proving
-the mechanics work — it's just not where this ends up.
+## 2026-09-30 — FastAPI serves the static frontend directly
+Single origin, no CORS, one deployment. Splitting to a CDN later is a known migration, not a rewrite.
 
-## 2026-09-30 — FastAPI serves the frontend static files directly
-Decided: mount `static/` straight onto the FastAPI app
-(`StaticFiles(directory="static", html=True)`) instead of hosting the
-frontend separately from the backend.
-Why: this is a real, documented pattern (part of Starlette, which FastAPI is
-built on), not a hack — but it's not how larger production apps usually do
-it. The more common split is frontend on a CDN/static host (Vercel,
-Netlify, S3+CloudFront) and backend on its own host, which scales better
-since a CDN serves static files far more efficiently than a Python process
-can, but costs you CORS configuration and two separate deployments instead
-of one. For ReDraw right now, single-origin FastAPI serving both is simpler
-and avoids CORS entirely, which fits the same "prove it works before
-optimizing for scale" reasoning as the SQLite-over-Postgres call. If this
-ever needs to scale, splitting the frontend out later is a well-understood
-migration (add CORS middleware, change one URL in map.js) — not a rewrite.
+## 2026-09-30 — drop the location text box, derive it from the drawn shape
+If the typed location and the drawn shape disagreed, results silently came back empty. Sampling points from the polygon is deterministic instead of a guess, and it handles a long bent corridor that a single centroid gets wrong.
 
-## 2026-09-30 — drop the user-facing location field, derive it from the drawn shape instead
-Decided: remove the "where" text input from the UI entirely. The backend now
-reverse-geocodes points sampled from the user's drawn polygon into real
-place names, queries Adzuna once per distinct place name, merges and dedupes
-the results (by job id), then runs the existing Shapely filter on that
-combined pool.
-Why: testing surfaced a real UX bug — if a user drew a shape in one area but
-typed a different (or mismatched) location, Adzuna's text-matched results
-and the user's polygon would never overlap, silently returning nothing.
-First considered just dropping "where" and pulling a bigger results_per_page
-with no location filter at all, but that's just gambling with better odds —
-a nationwide random sample still might not contain anything inside a
-specific small drawn shape, and there'd be no way to tell "nothing matched"
-apart from "we got unlucky." Deriving the location directly from the shape's
-own geometry is deterministic instead of probabilistic: Adzuna gets told the
-real area because it was computed from where the user actually drew, not
-guessed by the user or left to chance. Also correctly handles a bent/long
-corridor (the actual flagship use case) that a single centroid would get
-wrong — sampling multiple points along the shape instead of one center point
-avoids that failure mode.
+## 2026-09-30 — Nominatim's free public API for reverse geocoding
+Their policy explicitly permits end-user-triggered lookups at moderate volume, but the 1 req/sec limit is global across all traffic, not per user.
 
-## 2026-09-30 — using the public Nominatim (OpenStreetMap) reverse-geocoding API, free tier, for now
-Decided: use nominatim.openstreetmap.org's free public API for the
-shape-to-location step above, with a real User-Agent header and 1-second
-delay between calls as their usage policy requires.
-Why: read their actual usage policy before committing to this (not just
-assumed it was fine). It explicitly permits exactly this use case —
-"directly triggered by the end-user," "moderate" number of users — but the
-1 req/sec rate limit is global across the whole app's traffic, not
-per-user, and their own policy says apps with real scale should expect to
-need their own self-hosted Nominatim instance or a paid commercial geocoder
-(Google, Mapbox). Same shape of tradeoff as the Adzuna commercial-license
-decision: free tier is legitimately fine to prove the mechanic and run a
-small demo, but there's a known, already-identified ceiling to deal with
-before this could handle real traffic, not a silent trap to discover later.
+## 2026-10-01 — ingest-and-store replaces live-proxy; Postgres + PostGIS replaces SQLite
+Nominatim's rate limit can't be coordinated across users at request time, and geocoding only needs to happen once per job, not once per search. Search becomes a single spatial query against data we own.
+
+## 2026-10-01 — every source is its own adapter module
+Any one of them can be dropped or swapped without touching ingestion or search. Written specifically because borrowed sources get revoked.
+
+## 2026-10-02 — CareerOneStop dropped
+Their terms require their logo on every page and no-login access to any feature using their data, which rules out ever putting accounts in front of it.
+
+## 2026-10-02 — USAJobs cleared as the first real source
+Read their actual terms: storing and normalizing is explicitly permitted, with attribution and apply links pointing back to USAJOBS.
+
+## 2026-10-02 — Workday blocked, and with it four of the biggest employers audited
+Their platform terms ban data mining and building applications against their sites without written consent. A permissive robots.txt doesn't override that — Workday treats robots.txt as a floor, not a grant.
+
+## 2026-10-17 — Albertsons/Safeway blocked, iCIMS gated
+Albertsons' own terms ban scrapers across all their banners. iCIMS has no public jobs API and gates access behind a partner program.
+
+## 2026-10-17 — the enterprise ATS tier gates aggregation on purpose
+Four platforms, same answer. Job distribution is what they sell their customers, so a free aggregator is a competitor by definition. This is structural, not bad luck.
+
+## 2026-10-17 — aggregator first, marketplace second
+Nobody cold-started a two-sided marketplace. Indeed aggregated, LinkedIn built a network, Monster already had newspaper inventory. Aggregated listings are also what makes employer outreach warm instead of cold.
+
+## 2026-10-17 — supply from Portland metro, distribution from Columbia County
+Aggregating a public job board needs no relationships, which solves having no network in Portland. Columbia County is where I'm local, and it's where direct postings come from later.
+
+## 2026-10-17 — Lever cleared, Greenhouse parked
+Lever's docs say the API is "designed to help you create a job site" and that postings may be scraped by third parties. Greenhouse's job board API is public but their user agreement separately bans automated access, which is too close to the Workday shape to build on.
+
+## 2026-10-17 — board tokens can't be guessed, so detect them from careers pages
+Probing ten plausible company names against Lever found only Lever's own demo site.
+
+## 2026-10-17 — direct employer posting is the actual business
+It's the only data nobody can revoke, the only source that gives street addresses, and the only thing there's any money in.
+
+## 2026-10-17 — moderation instead of employer accounts
+Under twenty employers, all known personally. Review is cheaper than building auth and doubles as the spam defense.
+
+## 2026-10-17 — geometry lives on job_locations, not jobs
+One federal requisition listed 1,176 duty stations. A single coordinate column on a job was never going to work.
+
+## 2026-10-17 — standing registers flagged, not dropped
+Federal "Public Notice" postings list dozens of towns and aren't a vacancy at any of them. Excluded from search and noindexed, but kept, because that's a display decision I might reverse.
+
+## 2026-10-17 — expiry only runs after a successful ingest
+And it refuses to expire anything if a run returns nothing or less than half the previous count, so a broken source can't empty the site.
+
+## 2026-10-18 — publish our own JobPosting markup and per-job pages
+A map of markers is invisible to search engines. SEO is the only free traffic channel available.
+
+## 2026-10-18 — renamed to Cupholder
+Car, commute, the corridor you actually drive. cupholder.work.
+
+## 2026-10-19 — freehand drawing instead of clicking vertices
+Leaflet.draw hasn't shipped since 2017 and its polygon tool means eight taps along Highway 30. One drag is the real gesture, and on a phone it's a single touch.
+
+## 2026-10-19 — drawing over route corridors, even though routing fits the pitch
+A route buffer assumes jobs cluster along the road. In Columbia County they don't, and willingness to drive isn't symmetric — people will go 40 minutes one way and refuse 15 the other.
