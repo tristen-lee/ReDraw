@@ -26,12 +26,7 @@ header {
     padding: 18px 20px 10px;
 }
 
-h1 {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.6px;
-}
+h1 { margin: 0; }
 
 /* Logo is an outlined SVG, so the teal H is baked in at #197082.
    Changing --brand means re-exporting it from Figma. */
@@ -49,7 +44,6 @@ h1 {
     display: inline-block;
 }
 
-header h1 a { text-decoration: none; }
 
 .tagline {
     margin: 4px 0 0;
@@ -199,15 +193,15 @@ footer {
 .leaflet-popup-tip {
     background: var(--bg-raised);
     color: var(--text);
+    box-shadow: none;
 }
 
 .leaflet-popup-content-wrapper {
     border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 12px rgba(30, 32, 25, 0.14);
 }
 
 .leaflet-popup-content { margin: 12px 14px; font: inherit; }
-.leaflet-popup-tip { box-shadow: none; }
 
 .leaflet-control-attribution {
     font-size: 11px;
