@@ -11,7 +11,7 @@ const results = L.layerGroup().addTo(map);
 const container = map.getContainer();
 
 const BRAND = getComputedStyle(document.documentElement)
-    .getPropertyValue('--brand').trim() || '#2188A1';
+    .getPropertyValue('--brand').trim() || '#197082';
 
 const SIMPLIFY_TOLERANCE = 6;
 const MIN_POINTS = 8;

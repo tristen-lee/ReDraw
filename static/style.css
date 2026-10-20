@@ -1,14 +1,17 @@
 :root {
     --text: #1E2019;
-    --text-light: #6b6b6b;
-    --border: #d8d8d8;
-    --brand: #2188A1;
+    --text-light: #5a5346;
+    --border: #c3b48a;
+    --brand: #197082;
+    --bg: #EEE5BF;
+    --bg-raised: #F5EFD6;
 }
 
 * { box-sizing: border-box; }
 
 body {
     margin: 0;
+    background: var(--bg);
     font: 15px/1.5 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     color: var(--text);
 }
@@ -30,8 +33,8 @@ h1 {
     letter-spacing: -0.6px;
 }
 
-/* Logo is an outlined SVG, so the teal H is baked in at #2188A1.
-   Changing --brand means re-exporting it. */
+/* Logo is an outlined SVG, so the teal H is baked in at #197082.
+   Changing --brand means re-exporting it from Figma. */
 .wordmark {
     line-height: 0;
 }
@@ -105,12 +108,13 @@ footer {
 #draw-button { background: var(--brand); }
 
 #clear-button {
-    background: #fff;
+    background: transparent;
     color: var(--text);
     border: 1px solid var(--border);
 }
 
 #job-input {
+    background: var(--bg-raised);
     padding: 7px 10px;
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -144,7 +148,7 @@ footer {
     border-radius: 50%;
     font-size: 12px;
     font-weight: 600;
-    box-shadow: 0 0 0 2px #fff;
+    box-shadow: 0 0 0 2px var(--bg);
 }
 
 .popup h3 {
@@ -175,7 +179,7 @@ footer {
 
 /* Tiles are images, so a filter is the only way to recolor the
    basemap. Try grayscale(1), saturate(0.4), sepia(0.2). */
-.leaflet-tile-pane { filter: saturate(0.75) brightness(1.02); }
+.leaflet-tile-pane { filter: saturate(0.6) brightness(1.02) sepia(0.18); }
 
 .leaflet-bar {
     border: 1px solid var(--border);
@@ -189,7 +193,13 @@ footer {
     color: var(--text);
 }
 
-.leaflet-bar a:hover { background: #f4f4f4; }
+.leaflet-bar a:hover { background: var(--bg-raised); }
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: var(--bg-raised);
+    color: var(--text);
+}
 
 .leaflet-popup-content-wrapper {
     border-radius: 6px;
@@ -201,7 +211,8 @@ footer {
 
 .leaflet-control-attribution {
     font-size: 11px;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(238, 229, 191, 0.85);
+    color: var(--text-light);
 }
 
 /* ============================================================
@@ -217,6 +228,7 @@ form label,
 form input,
 form textarea,
 #auth input {
+    background: var(--bg-raised);
     display: block;
     width: 100%;
     margin-top: 5px;
@@ -273,7 +285,7 @@ form button:disabled { background: var(--text-light); }
 .actions { display: flex; gap: 8px; margin-top: 8px; }
 
 .actions .reject {
-    background: #fff;
+    background: transparent;
     color: var(--text);
     border: 1px solid var(--border);
 }
@@ -293,7 +305,7 @@ form button:disabled { background: var(--text-light); }
     margin: 14px 0;
     padding: 10px 12px;
     border-left: 3px solid var(--border);
-    background: #fafafa;
+    background: var(--bg-raised);
     color: var(--text-light);
     font-size: 14px;
 }
