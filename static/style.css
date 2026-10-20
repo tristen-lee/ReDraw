@@ -23,13 +23,27 @@ header {
     padding: 18px 20px 10px;
 }
 
-/* The wordmark. Same typeface as everything else, just heavier —
-   one font at two weights avoids the pairing problem entirely. */
 h1 {
     margin: 0;
     font-size: 26px;
     font-weight: 700;
     letter-spacing: -0.6px;
+}
+
+/* Logo is an outlined SVG, so the teal H is baked in at #2188A1.
+   Changing --brand means re-exporting it. */
+.wordmark {
+    line-height: 0;
+}
+
+.wordmark img {
+    display: block;
+    width: auto;
+    height: 30px;
+}
+
+.wordmark a {
+    display: inline-block;
 }
 
 header h1 a { text-decoration: none; }
