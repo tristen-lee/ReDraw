@@ -107,8 +107,9 @@ h1.wordmark { margin: 0; }
 .app {
     display: grid;
     grid-template-columns: 400px 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     grid-template-areas:
+        "intro   map"
         "toolbar map"
         "panel   map";
     height: calc(100dvh - var(--topbar-height));
@@ -157,8 +158,12 @@ h1.wordmark { margin: 0; }
     border-right: 1px solid var(--border);
 }
 
-.panel-intro { padding: 24px 24px 16px; }
-.panel-intro h1 { font-size: 28px; letter-spacing: -0.4px; }
+.intro {
+    grid-area: intro;
+    padding: 24px 24px 8px;
+    border-right: 1px solid var(--border);
+}
+.intro h1 { font-size: 28px; letter-spacing: -0.4px; }
 .lede { margin: 8px 0 0; color: var(--text-light); }
 
 .panel-head {
@@ -403,8 +408,8 @@ body.drawing .pin { pointer-events: none; }
 
     .app {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 58dvh auto;
-        grid-template-areas: "toolbar" "map" "panel";
+        grid-template-rows: auto auto 58dvh auto;
+        grid-template-areas: "intro" "toolbar" "map" "panel";
         height: auto;
     }
 
@@ -415,7 +420,8 @@ body.drawing .pin { pointer-events: none; }
     .toolbar .button { flex: 1 1 0; }
 
     .panel { overflow: visible; border-right: 0; }
-    .panel-intro, .panel-head { padding-left: 16px; padding-right: 16px; }
+    .intro { padding: 20px 16px 4px; border-right: 0; }
+    .panel-head { padding-left: 16px; padding-right: 16px; }
     .job { padding: 16px; }
 
     /* Drawing gets the whole screen; a thumb can't trace inside a scrolling page. */
@@ -423,7 +429,6 @@ body.drawing .pin { pointer-events: none; }
 
     /* One short row, so the key doesn't cover the markers it explains. */
     .legend { bottom: 40px; grid-auto-flow: column; gap: 16px; padding: 8px 12px; }
-    .legend-detail { display: none; }
     .show-more { width: calc(100% - 32px); margin: 16px; }
 
     .hiring { flex-direction: column; align-items: flex-start; padding: 32px 16px; }
