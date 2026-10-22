@@ -31,13 +31,13 @@
         <label>
             Town
             <input name="town" required maxlength="120" placeholder="St. Helens, OR">
-            <small>Town and state. Required.</small>
+            <small>Town and state.</small>
         </label>
 
         <label>
-            Street address <span class="optional">optional</span>
-            <input name="street_address" maxlength="300" placeholder="1721 Columbia Blvd">
-            <small>Include it and the job gets its own pin instead of a dot over the whole town.</small>
+            Street address
+            <input name="street_address" required maxlength="300" placeholder="1721 Columbia Blvd">
+            <small>Where the work happens. Every job here sits on its real address, so people know exactly how far the drive is.</small>
         </label>
 
         <label>
@@ -48,8 +48,9 @@
         </label>
 
         <label>
-            How to apply <span class="optional">optional</span>
-            <input name="apply_url" maxlength="500" placeholder="https://… or mailto:hiring@…">
+            Where to apply
+            <input name="apply_url" required maxlength="500" placeholder="yoursite.com/jobs or hiring@yoursite.com">
+            <small>A link to your application, or an email that takes résumés.</small>
         </label>
 
         <label>

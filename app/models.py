@@ -1,6 +1,11 @@
+import re
+
 from pydantic import BaseModel, Field, field_validator
 
 SAFE_LINK_SCHEMES = ("http://", "https://", "mailto:")
+
+
+EMAIL = re.compile(r"^[^@\s:/]+@[^@\s]+\.[^@\s]+$")
 
 
 def is_safe_link(url):
@@ -19,21 +24,25 @@ class JobSubmission(BaseModel):
     title: str = Field(min_length=2, max_length=200)
     description: str = Field(min_length=20, max_length=20000)
     town: str = Field(min_length=2, max_length=120)
-    contact_email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=200)
-    street_address: str | None = Field(default=None, max_length=300)
-    apply_url: str | None = Field(default=None, max_length=500)
+    contact_email: str = Field(pattern=EMAIL.pattern, max_length=200)
+    street_address: str = Field(min_length=3, max_length=300)
+    apply_url: str = Field(min_length=3, max_length=500)
     employment_type: list[str] | None = Field(default=None, max_length=5)
 
-    # Rendered into an href on a public page. HTML escaping does nothing about
-    # the scheme, so "javascript:..." would run when a job seeker taps Apply.
+    # Employers type a link or an email address. The scheme is added here, then
+    # checked, because this lands in an href on a public page and "javascript:..."
+    # would run when a job seeker taps Apply.
     @field_validator("apply_url")
     @classmethod
     def apply_url_scheme(cls, value):
-        if value is None or not value.strip():
-            return None
-        if not is_safe_link(value):
-            raise ValueError("must start with http://, https:// or mailto:")
-        return value.strip()
+        value = value.strip()
+        if EMAIL.match(value):
+            value = f"mailto:{value}"
+        elif "://" not in value and not value.lower().startswith("mailto:") and "." in value.split("/")[0]:
+            value = f"https://{value}"
+        if not is_safe_link(value) or " " in value:
+            raise ValueError("Enter a link to your application or an email address.")
+        return value
 
 
 class ReviewRequest(BaseModel):

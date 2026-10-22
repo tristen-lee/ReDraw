@@ -1,6 +1,8 @@
 import uuid
 
-from app import geocode, places
+import requests
+
+from app import geocode
 
 INSERT_JOB = """
 insert into jobs (
@@ -17,32 +19,28 @@ values (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
 """
 
 
-def locate(cur, street_address, town_line):
-    if street_address:
-        match = geocode.geocode_address(f"{street_address}, {town_line}" if town_line else street_address)
-        if match:
-            return {
-                "raw": match["matched_address"],
-                "precision": "exact",
-                "latitude": match["latitude"],
-                "longitude": match["longitude"],
-            }
-
-    resolved = places.resolve(cur, town_line)
-    if resolved:
-        return {
-            "raw": town_line,
-            "precision": "town",
-            "latitude": resolved["latitude"],
-            "longitude": resolved["longitude"],
-        }
-    return None
+# Direct posts are exact or they don't go up. Town-level only exists for
+# sources we can't ask for an address.
+def locate(street_address, town_line):
+    match = geocode.geocode_address(f"{street_address}, {town_line}")
+    if match is None:
+        return None
+    return {
+        "raw": match["matched_address"],
+        "precision": "exact",
+        "latitude": match["latitude"],
+        "longitude": match["longitude"],
+    }
 
 
 def submit(cur, payload):
-    location = locate(cur, payload.street_address, payload.town)
+    try:
+        location = locate(payload.street_address, payload.town)
+    except requests.RequestException:
+        return None, "The address lookup isn't responding right now. Try again in a few minutes."
     if location is None:
-        return None, "Could not place that address. Check the street and town."
+        return None, ("We couldn't find that street address. Check the spelling and the town, "
+                      "and use the street address of the worksite, not a PO box.")
 
     cur.execute(
         INSERT_JOB,
