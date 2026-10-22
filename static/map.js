@@ -7,7 +7,7 @@ const MIN_POINTS = 8;
 const PAGE_SIZE = 20;
 const PHONE = window.matchMedia('(max-width: 760px)');
 
-const SOURCE_LABELS = { usajobs: 'USAJOBS', lever: 'Lever', direct: 'Posted directly' };
+const SOURCE_LABELS = { usajobs: 'USAJOBS', direct: 'Posted directly' };
 const PAY_UNITS = { PA: 'a year', PH: 'an hour', PD: 'a day', PW: 'a week', BW: 'every two weeks', PM: 'a month' };
 
 // The map's own palette: warm paper land, sage woods, a muted river.
@@ -367,7 +367,7 @@ function jobCard(job) {
             <a class="job-title" href="${escapeHtml(job.path)}">${escapeHtml(job.title)}</a>
             <p class="job-employer">${escapeHtml(job.employer || 'Employer not listed')}</p>
             <p class="job-where">${precisionTag(first.precision)} <span>${escapeHtml(first.raw_location || '')}</span>${extra}</p>
-            <p class="job-meta">${pay ? `<span class="pay">${escapeHtml(pay)}</span> &middot; ` : ''}${escapeHtml(relativeDate(job.date_posted))} &middot; via ${escapeHtml(SOURCE_LABELS[job.source] || job.source)}</p>
+            <p class="job-meta">${pay ? `<span class="pay">${escapeHtml(pay)}</span> &middot; ` : ''}${escapeHtml(relativeDate(job.date_posted))} &middot; via ${escapeHtml(SOURCE_LABELS[job.source] || 'employer site')}</p>
         </li>`;
 }
 

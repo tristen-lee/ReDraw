@@ -1,8 +1,9 @@
 import json
+import sys
 
 from psycopg.types.json import Jsonb
 
-from app import db, usajobs
+from app import db, employers, usajobs
 
 # A posting listing this many duty stations is a standing register, not a vacancy
 # at any one of them.
@@ -14,18 +15,19 @@ SUSPICIOUS_DROP_RATIO = 0.5
 
 UPSERT_JOB = """
 insert into jobs (
-    source, source_id, employer_name_raw, title, description, url,
+    source, source_id, employer_id, employer_name_raw, title, description, url,
     date_posted, date_closes, employment_type,
     salary_min, salary_max, salary_interval, is_blanket, is_remote, raw,
     last_seen_at, updated_at, expired_at
 )
 values (
-    %(source)s, %(source_id)s, %(employer_name)s, %(title)s, %(description)s, %(url)s,
+    %(source)s, %(source_id)s, %(employer_id)s, %(employer_name)s, %(title)s, %(description)s, %(url)s,
     %(date_posted)s, %(date_closes)s, %(employment_type)s,
     %(salary_min)s, %(salary_max)s, %(salary_interval)s, %(is_blanket)s, %(is_remote)s, %(raw)s,
     now(), now(), null
 )
 on conflict (source, source_id) do update set
+    employer_id = excluded.employer_id,
     employer_name_raw = excluded.employer_name_raw,
     title = excluded.title,
     description = excluded.description,
@@ -64,6 +66,7 @@ def upsert_job(cur, job):
         {
             "source": job["source"],
             "source_id": job["source_id"],
+            "employer_id": job.get("employer_id"),
             "employer_name": job.get("employer_name"),
             "title": job["title"],
             "description": job.get("description"),
@@ -104,13 +107,16 @@ def previous_success_count(cur, source):
     return row[0] if row else None
 
 
-def expire_missing(cur, source, run_started_at):
+# Jobs from an employer whose feed errored this run are left alone: not
+# seeing them says nothing about whether they're still open.
+def expire_missing(cur, source, run_started_at, skip_employer_ids=()):
     cur.execute(
         """
         update jobs set expired_at = now(), updated_at = now()
         where source = %s and expired_at is null and last_seen_at < %s
+          and (employer_id is null or employer_id <> all(%s))
         """,
-        (source, run_started_at),
+        (source, run_started_at, list(skip_employer_ids)),
     )
     return cur.rowcount
 
@@ -126,7 +132,11 @@ def run(source, fetch):
         conn.commit()
 
         try:
-            jobs = fetch()
+            result = fetch()
+            jobs = result["jobs"] if isinstance(result, dict) else result
+            failed = result.get("failed", []) if isinstance(result, dict) else []
+            if failed and not jobs and len(failed) == result.get("employers", len(failed)):
+                raise RuntimeError("every employer failed: " + "; ".join(f["error"] for f in failed[:5]))
         except Exception as exc:
             with conn.cursor() as cur:
                 cur.execute(
@@ -162,8 +172,12 @@ def run(source, fetch):
                     else "expiry skipped: run returned no jobs"
                 )
             else:
-                expired = expire_missing(cur, source, started_at)
+                expired = expire_missing(cur, source, started_at, [f["employer_id"] for f in failed])
                 note = None
+
+            if failed:
+                failures = "; ".join(f"{f['name']}: {f['error']}" for f in failed)
+                note = f"{note + ' | ' if note else ''}{len(failed)} employer(s) failed: {failures}"[:2000]
 
             cur.execute(
                 """
@@ -191,5 +205,25 @@ def run_usajobs():
     return run("usajobs", usajobs.fetch_region_jobs)
 
 
+def run_platform(platform):
+    def fetch():
+        with db.connect() as conn, conn.cursor() as cur:
+            return employers.collect(cur, platform)
+    return run(platform, fetch)
+
+
+# Each source runs on its own; one failing never stops the rest.
+def main(sources):
+    failures = 0
+    for source in sources:
+        try:
+            result = run_usajobs() if source == "usajobs" else run_platform(source)
+            print(source, json.dumps(result, default=str))
+        except Exception as exc:
+            failures += 1
+            print(source, "FAILED", f"{type(exc).__name__}: {exc}")
+    return 1 if failures else 0
+
+
 if __name__ == "__main__":
-    print(json.dumps(run_usajobs(), indent=2))
+    sys.exit(main(sys.argv[1:] or ["usajobs"]))

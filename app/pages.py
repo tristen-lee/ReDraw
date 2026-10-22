@@ -3,7 +3,8 @@ import re
 
 from app import places
 
-SOURCE_LABELS = {"usajobs": "USAJOBS", "lever": "the employer's site", "direct": "the employer"}
+SOURCE_LABELS = {"usajobs": "USAJOBS", "direct": "the employer"}
+EMPLOYER_SITE = "the employer's site"
 
 # USAJobs rate interval codes. "WC" is without compensation, so it gets no salary.
 SALARY_UNITS = {"PH": "HOUR", "PD": "DAY", "PW": "WEEK", "BW": "WEEK", "PM": "MONTH", "PA": "YEAR"}
@@ -89,7 +90,7 @@ def load(cur, job_id):
     return {
         "id": id_,
         "source": source,
-        "source_label": SOURCE_LABELS.get(source, source),
+        "source_label": SOURCE_LABELS.get(source, EMPLOYER_SITE),
         "source_id": source_id,
         "title": title,
         "description": description or "",

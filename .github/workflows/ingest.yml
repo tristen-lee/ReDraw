@@ -23,4 +23,35 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           USA_JOBS_API_KEY: ${{ secrets.USA_JOBS_API_KEY }}
           USER_AGENT: ${{ secrets.USER_AGENT }}
-        run: python -m app.ingest
+        run: python -m app.ingest usajobs
+
+      # Runs even when an earlier source failed; each source stands alone.
+      - name: Ingest Greenhouse
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.ingest greenhouse
+
+      - name: Ingest Lever
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.ingest lever
+
+      - name: Ingest Ashby
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.ingest ashby
+
+      - name: Ingest SmartRecruiters
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.ingest smartrecruiters
+
+      - name: Ingest employer sites
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.ingest markup
