@@ -139,7 +139,16 @@ h1.wordmark { margin: 0; }
 
 .search input::placeholder { color: var(--text-light); }
 
-.mapwrap { grid-area: map; position: relative; min-height: 320px; }
+/* On desktop the map sits inset as a card rather than running to the edges. */
+.mapwrap {
+    grid-area: map;
+    position: relative;
+    min-height: 320px;
+    margin: 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
 #map { position: absolute; inset: 0; }
 
 .panel {
@@ -399,6 +408,9 @@ body.drawing .pin { pointer-events: none; }
     }
 
     .toolbar { padding: 12px 16px; border-right: 0; }
+
+    /* Phones need every pixel of width, and full-screen drawing can't have margins. */
+    .mapwrap { margin: 0; border: 0; border-radius: 0; }
     .toolbar .button { flex: 1 1 0; }
 
     .panel { overflow: visible; border-right: 0; }
