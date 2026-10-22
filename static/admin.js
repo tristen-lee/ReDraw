@@ -50,6 +50,7 @@ async function loadQueue() {
                 <span class="${job.precision === 'exact' ? 'exact' : ''}">${escapeHtml(job.precision || '?')}</span>
             </p>
             <p class="meta">${escapeHtml(job.contact_email)} &middot; ${escapeHtml(job.submitted_at || '')}</p>
+            <p class="meta">Apply link: ${job.apply_url ? `<code>${escapeHtml(job.apply_url)}</code>` : 'none given'}</p>
             <div class="actions">
                 <button data-approve="1">Approve</button>
                 <button data-approve="0" class="reject">Reject</button>

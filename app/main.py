@@ -1,6 +1,7 @@
 ### FastAPI entrypoint ###
 
 import os
+import re
 import secrets
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
@@ -9,7 +10,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app import db, pages, submissions
-from app.models import Job, JobLocation, JobSubmission, ReviewRequest, SearchRequest
+from app.models import Job, JobLocation, JobSubmission, ReviewRequest, SearchRequest, is_safe_link
+
+# Link-preview fetchers and crawlers that ignore robots.txt would otherwise
+# inflate the one number shown to employers.
+NON_HUMAN_AGENTS = re.compile(
+    r"bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|curl|wget|python-requests|httpx|headless",
+    re.IGNORECASE,
+)
 
 templates = Jinja2Templates(directory="templates")
 
@@ -149,6 +157,42 @@ def review_job(job_id: int, request: ReviewRequest):
     return {"job_id": row[0], "status": row[1]}
 
 
+@app.get("/api/admin/clicks", dependencies=[Depends(require_admin)])
+def click_stats(days: int = 30):
+    with db.connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            select coalesce(e.name, j.employer_name_raw, 'Unknown') as employer,
+                   j.source,
+                   count(distinct j.id) as jobs_clicked,
+                   count(c.id) as clicks,
+                   max(c.clicked_at) as last_click
+            from job_clicks c
+            join jobs j on j.id = c.job_id
+            left join employers e on e.id = j.employer_id
+            where c.clicked_at > now() - make_interval(days => %s)
+            group by 1, 2
+            order by clicks desc
+            """,
+            (days,),
+        )
+        rows = cur.fetchall()
+
+    return {
+        "days": days,
+        "employers": [
+            {
+                "employer": employer,
+                "source": source,
+                "jobs_clicked": jobs_clicked,
+                "clicks": clicks,
+                "last_click": last_click.isoformat() if last_click else None,
+            }
+            for employer, source, jobs_clicked, clicks, last_click in rows
+        ],
+    }
+
+
 @app.get("/api/health")
 def health():
     with db.connect() as conn, conn.cursor() as cur:
@@ -228,6 +272,24 @@ def job_page(request: Request, job_id: int, slug: str | None = None):
     )
 
 
+@app.get("/go/{job_id}")
+def apply_redirect(request: Request, job_id: int):
+    # Redirect only to the URL stored on the job, never one taken from the
+    # request, so this cannot be used as an open redirect. The scheme is
+    # rechecked because rows submitted before validation existed may predate it.
+    with db.connect() as conn, conn.cursor() as cur:
+        cur.execute("select url from jobs where id = %s and status = 'live'", (job_id,))
+        row = cur.fetchone()
+        if row is None or not is_safe_link(row[0]):
+            raise HTTPException(404, "That job is no longer listed.")
+
+        if not NON_HUMAN_AGENTS.search(request.headers.get("user-agent", "")):
+            cur.execute("insert into job_clicks (job_id) values (%s)", (job_id,))
+            conn.commit()
+
+    return RedirectResponse(row[0].strip(), status_code=302)
+
+
 @app.get("/sitemap.xml")
 def sitemap(request: Request):
     base = site_base(request)
@@ -259,7 +321,10 @@ def sitemap(request: Request):
 
 @app.get("/robots.txt")
 def robots(request: Request):
-    body = f"User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/\n\nSitemap: {site_base(request)}/sitemap.xml\n"
+    body = (
+        "User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/\nDisallow: /go/\n\n"
+        f"Sitemap: {site_base(request)}/sitemap.xml\n"
+    )
     return Response(body, media_type="text/plain")
 
 

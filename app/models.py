@@ -1,4 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+SAFE_LINK_SCHEMES = ("http://", "https://", "mailto:")
+
+
+def is_safe_link(url):
+    return bool(url) and url.strip().lower().startswith(SAFE_LINK_SCHEMES)
 
 
 class SearchRequest(BaseModel):
@@ -17,6 +23,17 @@ class JobSubmission(BaseModel):
     street_address: str | None = Field(default=None, max_length=300)
     apply_url: str | None = Field(default=None, max_length=500)
     employment_type: list[str] | None = Field(default=None, max_length=5)
+
+    # Rendered into an href on a public page. HTML escaping does nothing about
+    # the scheme, so "javascript:..." would run when a job seeker taps Apply.
+    @field_validator("apply_url")
+    @classmethod
+    def apply_url_scheme(cls, value):
+        if value is None or not value.strip():
+            return None
+        if not is_safe_link(value):
+            raise ValueError("must start with http://, https:// or mailto:")
+        return value.strip()
 
 
 class ReviewRequest(BaseModel):

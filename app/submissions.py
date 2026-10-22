@@ -72,7 +72,7 @@ def list_pending(cur, limit=100):
     cur.execute(
         """
         select j.id, j.employer_name_raw, j.title, j.contact_email, j.first_seen_at,
-               l.raw_location, l.precision
+               l.raw_location, l.precision, j.url
         from jobs j
         left join job_locations l on l.job_id = j.id
         where j.status = 'pending'
@@ -90,6 +90,7 @@ def list_pending(cur, limit=100):
             "submitted_at": row[4].isoformat() if row[4] else None,
             "location": row[5],
             "precision": row[6],
+            "apply_url": row[7],
         }
         for row in cur.fetchall()
     ]
