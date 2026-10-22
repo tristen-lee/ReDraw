@@ -1,6 +1,6 @@
 import re
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 SAFE_LINK_SCHEMES = ("http://", "https://", "mailto:")
 
@@ -43,6 +43,18 @@ class JobSubmission(BaseModel):
         if not is_safe_link(value) or " " in value:
             raise ValueError("Enter a link to your application or an email address.")
         return value
+
+
+class PlaceRequest(BaseModel):
+    address: str | None = Field(default=None, min_length=3, max_length=400)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def address_or_point(self):
+        if not self.address and (self.latitude is None or self.longitude is None):
+            raise ValueError("send an address, or both latitude and longitude")
+        return self
 
 
 class ReviewRequest(BaseModel):

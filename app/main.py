@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app import db, pages, submissions
-from app.models import Job, JobLocation, JobSubmission, ReviewRequest, SearchRequest, is_safe_link
+from app.models import Job, JobLocation, JobSubmission, PlaceRequest, ReviewRequest, SearchRequest, is_safe_link
 
 # Link-preview fetchers and crawlers that ignore robots.txt would otherwise
 # inflate the one number shown to employers.
@@ -156,11 +156,12 @@ def submit_job(payload: JobSubmission):
             raise HTTPException(422, error or "Could not accept that submission.")
         conn.commit()
 
+    location = result["location"]
     return {
         "status": "pending review",
         "job_id": result["job_id"],
-        "placed_as": result["location"]["precision"],
-        "location": result["location"]["raw"],
+        "placed": location is not None,
+        "location": location["raw"] if location else payload.street_address,
     }
 
 
@@ -174,10 +175,22 @@ def pending_jobs():
 def review_job(job_id: int, request: ReviewRequest):
     with db.connect() as conn, conn.cursor() as cur:
         row = submissions.review(cur, job_id, request.approve, request.note)
+        if row == "unplaced":
+            raise HTTPException(409, "Place it on the map before approving.")
         if row is None:
             raise HTTPException(404, "No pending job with that id.")
         conn.commit()
     return {"job_id": row[0], "status": row[1]}
+
+
+@app.post("/api/admin/place/{job_id}", dependencies=[Depends(require_admin)])
+def place_job(job_id: int, request: PlaceRequest):
+    with db.connect() as conn, conn.cursor() as cur:
+        location, error = submissions.place(cur, job_id, request.address, request.latitude, request.longitude)
+        if location is None:
+            raise HTTPException(422, error)
+        conn.commit()
+    return {"job_id": job_id, "location": location["raw"], "precision": location["precision"]}
 
 
 @app.get("/api/admin/clicks", dependencies=[Depends(require_admin)])

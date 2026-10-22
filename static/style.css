@@ -516,6 +516,8 @@ form button:disabled { background: var(--border-strong); color: var(--text); cur
 .queued h3 { margin: 0 0 4px; font-size: 16px; }
 .queued .meta { margin: 0 0 4px; }
 .queued .exact { color: var(--brand); font-weight: 600; }
+.queued .unplaced { color: var(--error); font-weight: 600; }
+.place-form { margin: 8px 0; }
 .queued code { color: var(--text); overflow-wrap: anywhere; }
 
 .actions { display: flex; gap: 8px; margin-top: 8px; }

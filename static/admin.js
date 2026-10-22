@@ -46,9 +46,18 @@ async function loadQueue() {
             <h3>${escapeHtml(job.title)}</h3>
             <p class="meta">
                 ${escapeHtml(job.employer)} &middot;
-                ${escapeHtml(job.location || 'no location')} &middot;
-                <span class="${job.precision === 'exact' ? 'exact' : ''}">${escapeHtml(job.precision || '?')}</span>
+                ${job.location
+                    ? `${escapeHtml(job.location)} &middot; <span class="exact">${escapeHtml(job.precision)}</span>`
+                    : `<span class="unplaced">Address not found:</span> ${escapeHtml(job.submitted_address || 'none given')}`}
             </p>
+            ${job.location ? '' : `
+            <form class="place-form">
+                <label>
+                    Fix the address, or paste coordinates from Google Maps
+                    <input name="place" value="${escapeHtml(job.submitted_address || '')}" autocomplete="off">
+                </label>
+                <button type="submit">Place it</button>
+            </form>`}
             <p class="meta">${escapeHtml(job.contact_email)} &middot; ${escapeHtml(job.submitted_at || '')}</p>
             <p class="meta">Apply link: ${job.apply_url ? `<code>${escapeHtml(job.apply_url)}</code>` : 'none given'}</p>
             <div class="actions">
@@ -58,6 +67,36 @@ async function loadQueue() {
         </article>
     `).join('');
 }
+
+const COORDINATES = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
+
+queue.addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.target.closest('.place-form');
+    if (!form) return;
+
+    const value = form.elements.place.value.trim();
+    const point = value.match(COORDINATES);
+    const body = point
+        ? { latitude: Number(point[1]), longitude: Number(point[2]) }
+        : { address: value };
+
+    form.querySelector('button').disabled = true;
+    const response = await fetch(`/api/admin/place/${form.closest('.queued').dataset.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token() },
+        body: JSON.stringify(body)
+    });
+    const result = await response.json().catch(() => null);
+
+    if (response.ok) {
+        loadQueue();
+    } else {
+        queueStatus.className = 'error';
+        queueStatus.textContent = typeof result?.detail === 'string' ? result.detail : `Placing failed (${response.status}).`;
+        form.querySelector('button').disabled = false;
+    }
+});
 
 queue.addEventListener('click', async event => {
     const button = event.target.closest('button[data-approve]');
@@ -77,8 +116,9 @@ queue.addEventListener('click', async event => {
         const left = queue.querySelectorAll('.queued').length;
         queueStatus.textContent = left ? `${left} waiting.` : 'Nothing waiting.';
     } else {
+        const result = await response.json().catch(() => null);
         queueStatus.className = 'error';
-        queueStatus.textContent = `Review failed (${response.status}).`;
+        queueStatus.textContent = typeof result?.detail === 'string' ? result.detail : `Review failed (${response.status}).`;
         card.querySelectorAll('button').forEach(b => (b.disabled = false));
     }
 });

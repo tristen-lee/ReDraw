@@ -7,9 +7,9 @@ from app import geocode
 INSERT_JOB = """
 insert into jobs (
     source, source_id, employer_name_raw, title, description, url,
-    contact_email, submitted_by, status, employment_type
+    contact_email, submitted_by, status, employment_type, submitted_address
 )
-values (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s)
+values (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s)
 returning id
 """
 
@@ -19,10 +19,13 @@ values (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
 """
 
 
-# Direct posts are exact or they don't go up. Town-level only exists for
-# sources we can't ask for an address.
-def locate(street_address, town_line):
-    match = geocode.geocode_address(f"{street_address}, {town_line}")
+# Direct posts are exact or they don't go live. An address the geocoder misses
+# still gets submitted, and waits in the review queue for a hand placement.
+def locate(address):
+    try:
+        match = geocode.geocode_address(address)
+    except requests.RequestException:
+        return None
     if match is None:
         return None
     return {
@@ -33,14 +36,17 @@ def locate(street_address, town_line):
     }
 
 
+def save_location(cur, job_id, location):
+    cur.execute("delete from job_locations where job_id = %s", (job_id,))
+    cur.execute(
+        INSERT_LOCATION,
+        (job_id, location["raw"], location["precision"], location["longitude"], location["latitude"]),
+    )
+
+
 def submit(cur, payload):
-    try:
-        location = locate(payload.street_address, payload.town)
-    except requests.RequestException:
-        return None, "The address lookup isn't responding right now. Try again in a few minutes."
-    if location is None:
-        return None, ("We couldn't find that street address. Check the spelling and the town, "
-                      "and use the street address of the worksite, not a PO box.")
+    address = f"{payload.street_address.strip()}, {payload.town.strip()}"
+    location = locate(address)
 
     cur.execute(
         INSERT_JOB,
@@ -54,23 +60,44 @@ def submit(cur, payload):
             payload.contact_email,
             payload.contact_email,
             payload.employment_type or None,
+            address,
         ),
     )
     job_id = cur.fetchone()[0]
 
-    cur.execute(
-        INSERT_LOCATION,
-        (job_id, location["raw"], location["precision"], location["longitude"], location["latitude"]),
-    )
+    if location:
+        save_location(cur, job_id, location)
 
     return {"job_id": job_id, "location": location}, None
+
+
+def place(cur, job_id, address=None, latitude=None, longitude=None):
+    cur.execute("select submitted_address from jobs where id = %s and status = 'pending'", (job_id,))
+    row = cur.fetchone()
+    if row is None:
+        return None, "No pending job with that id."
+
+    if address:
+        location = locate(address)
+        if location is None:
+            return None, "The geocoder couldn't find that one either. Paste coordinates instead."
+    else:
+        location = {
+            "raw": row[0] or "Placed by hand",
+            "precision": "exact",
+            "latitude": latitude,
+            "longitude": longitude,
+        }
+
+    save_location(cur, job_id, location)
+    return location, None
 
 
 def list_pending(cur, limit=100):
     cur.execute(
         """
         select j.id, j.employer_name_raw, j.title, j.contact_email, j.first_seen_at,
-               l.raw_location, l.precision, j.url
+               l.raw_location, l.precision, j.url, j.submitted_address
         from jobs j
         left join job_locations l on l.job_id = j.id
         where j.status = 'pending'
@@ -89,12 +116,24 @@ def list_pending(cur, limit=100):
             "location": row[5],
             "precision": row[6],
             "apply_url": row[7],
+            "submitted_address": row[8],
         }
         for row in cur.fetchall()
     ]
 
 
 def review(cur, job_id, approve, note=None):
+    if approve:
+        cur.execute(
+            """
+            select 1 from jobs j
+            where j.id = %s and j.status = 'pending'
+              and not exists (select 1 from job_locations l where l.job_id = j.id)
+            """,
+            (job_id,),
+        )
+        if cur.fetchone():
+            return "unplaced"
     cur.execute(
         """
         update jobs

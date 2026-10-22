@@ -45,7 +45,9 @@ form.addEventListener('submit', async event => {
         }
 
         status.className = 'ok';
-        status.textContent = `Got it — placed at ${body.location}. It goes live once reviewed.`;
+        status.textContent = body.placed
+            ? `Got it — placed at ${body.location}. It goes live once reviewed.`
+            : `Got it. We'll double-check the address and put it on the map once it's reviewed.`;
         form.reset();
     } catch {
         status.className = 'error';
