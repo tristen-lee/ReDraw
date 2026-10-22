@@ -1,9 +1,6 @@
 const style = getComputedStyle(document.documentElement);
 const cssVar = name => style.getPropertyValue(name).trim();
 
-const EXAMPLE_LABEL = 'Example: Highway 30, Clatskanie to Portland';
-const EXAMPLE_RING = [[-123.06365, 46.14842], [-122.92625, 46.12916], [-122.89527, 46.11658], [-122.88328, 46.10201], [-122.81382, 45.95129], [-122.75617, 45.9051], [-122.75536, 45.84648], [-122.79704, 45.79325], [-122.81689, 45.75393], [-122.78225, 45.67738], [-122.73428, 45.625], [-122.64603, 45.55423], [-122.64388, 45.53077], [-122.66064, 45.51041], [-122.70192, 45.49952], [-122.73358, 45.50708], [-122.82208, 45.57229], [-122.89004, 45.64773], [-122.93303, 45.74231], [-122.93533, 45.75956], [-122.90464, 45.82345], [-122.86798, 45.8737], [-122.92025, 45.9176], [-122.98381, 46.055], [-123.06444, 46.06723], [-123.21445, 46.06135], [-123.24521, 46.07107], [-123.26304, 46.09104], [-123.26452, 46.10681], [-123.25721, 46.12177], [-123.23252, 46.13784], [-123.06365, 46.14842]];
-
 const MIN_STEP_PX = 6;
 const SIMPLIFY_PX = 4;
 const MIN_POINTS = 8;
@@ -92,7 +89,6 @@ const els = {
 
 let map;
 let shapeRing = null;
-let isExample = false;
 let drawMode = false;
 let tracing = false;
 let tracePx = [];
@@ -242,24 +238,23 @@ function endTrace() {
 
     const ring = simplify(tracePx, SIMPLIFY_PX).map(p => map.unproject(p).toArray());
     setDrawMode(false);
-    setShape(ring, false);
+    setShape(ring);
     runSearch();
 }
 
 // ---------------------------------------------------------------------------
 // Shape and results
 
-function setShape(ring, example) {
+function setShape(ring) {
     shapeRing = ring;
-    isExample = example;
     const closed = ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1] ? ring : [...ring, ring[0]];
     map.getSource('shape').setData({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [closed] } });
 
-    els.chip.textContent = example ? EXAMPLE_LABEL : 'Your shape';
+    els.chip.textContent = 'Your shape';
     els.chip.hidden = false;
 
     const bounds = closed.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(closed[0], closed[0]));
-    map.fitBounds(bounds, { padding: overlayPadding(), duration: example ? 0 : 600 });
+    map.fitBounds(bounds, { padding: overlayPadding(), duration: 600 });
 }
 
 // Keep the shape clear of the label chip and the key, or a marker can end up
@@ -407,10 +402,8 @@ function renderJobs(jobs) {
     showMoreJobs();
 
     const places = groups.length === 1 ? '1 place' : `${groups.length} places`;
-    els.count.textContent = `${jobs.length} job${jobs.length === 1 ? '' : 's'} inside ${isExample ? 'this shape' : 'your shape'}`;
-    setStatus(isExample
-        ? `Across ${places}. This is an example — draw your own to replace it.`
-        : `Across ${places}, newest first.`);
+    els.count.textContent = `${jobs.length} job${jobs.length === 1 ? '' : 's'} inside your shape`;
+    setStatus(`Across ${places}, newest first.`);
 }
 
 async function runSearch() {
@@ -523,8 +516,7 @@ async function init() {
         });
 
         wireControls();
-        setShape(EXAMPLE_RING, true);
-        runSearch();
+        clearShape();
     });
 
     fetch('/api/health')
