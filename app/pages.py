@@ -23,6 +23,22 @@ from job_locations where job_id = %s order by id
 """
 
 
+SECTION_HEADINGS = ("Duties", "Qualifications", "Requirements", "Education")
+
+
+def split_sections(description):
+    # USAJobs descriptions are assembled as "Duties\n...\n\nQualifications\n...".
+    # Splitting them back out only adds headings; the text itself is untouched.
+    sections = [{"heading": None, "body": ""}]
+    for block in (description or "").split("\n\n"):
+        head, _, rest = block.partition("\n")
+        if head.strip() in SECTION_HEADINGS and rest.strip():
+            sections.append({"heading": head.strip(), "body": rest.strip()})
+        else:
+            sections[-1]["body"] = f"{sections[-1]['body']}\n\n{block}".strip()
+    return [section for section in sections if section["body"]]
+
+
 def slugify(text):
     slug = re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")
     return slug[:80] or "job"
@@ -77,6 +93,7 @@ def load(cur, job_id):
         "source_id": source_id,
         "title": title,
         "description": description or "",
+        "sections": split_sections(description),
         "meta_description": (description or title)[:155].replace("\n", " "),
         "url": url,
         "employer": employer or "Employer not listed",

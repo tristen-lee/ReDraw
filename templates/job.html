@@ -18,16 +18,15 @@
 <body class="page">
 
 <header>
-    <h1 class="wordmark"><a href="/"><img src="/cupholder.svg" alt="Cupholder"></a></h1>
+    <a class="wordmark" href="/"><img src="/cupholder.svg" alt="Cupholder"></a>
 </header>
 
 <main class="form-wrap">
     <article class="posting">
-        <h2>{{ job.title }}</h2>
+        <h1>{{ job.title }}</h1>
         <p class="meta">
-            {{ job.employer }} &middot; {{ job.place }}
-            {% if job.precision == 'exact' %}<span class="exact">exact address</span>
-            {% else %}<span>{{ job.precision }}-level location</span>{% endif %}
+            {{ job.employer }} &middot; {{ job.place }} &middot;
+            {% if job.precision == 'exact' %}<span class="exact">Exact address</span>{% else %}Town-level location{% endif %}
         </p>
         {% if job.salary_text %}<p class="meta">{{ job.salary_text }}</p>{% endif %}
         {% if job.date_posted_display %}<p class="meta">Posted {{ job.date_posted_display }}{% if job.date_closes_display %} &middot; closes {{ job.date_closes_display }}{% endif %}</p>{% endif %}
@@ -36,7 +35,20 @@
         <p class="notice">This is a standing register, not a vacancy at a single site. The agency lists {{ job.location_count }} possible locations and draws from applicants as openings come up.</p>
         {% endif %}
 
-        <div class="description">{{ job.description }}</div>
+        {% if job.url %}
+        <p class="apply">
+            <a class="apply-button" href="/go/{{ job.id }}" target="_blank" rel="noopener nofollow">
+                Apply on {{ job.source_label }}
+            </a>
+        </p>
+        {% endif %}
+
+        <div class="description">
+            {% for section in job.sections %}
+            {% if section.heading %}<h2>{{ section.heading }}</h2>{% endif %}
+            <p>{{ section.body }}</p>
+            {% endfor %}
+        </div>
 
         {% if job.url %}
         <p class="apply">

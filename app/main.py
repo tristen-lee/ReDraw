@@ -216,6 +216,12 @@ def click_stats(days: int = 30):
     }
 
 
+@app.get("/api/config")
+def client_config():
+    # Null until the basemap is hosted; the map falls back to OSM raster tiles.
+    return {"tiles_url": os.environ.get("PMTILES_URL") or None}
+
+
 @app.get("/api/health")
 def health():
     with db.connect() as conn, conn.cursor() as cur:

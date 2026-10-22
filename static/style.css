@@ -1,217 +1,432 @@
+/* ============================================================
+   Tokens. Change these and the whole site follows.
+   Spacing only uses 4 8 12 16 24 32 48 64.
+   Type only uses 28 20 16 13.
+   ============================================================ */
 :root {
-    --text: #1E2019;
-    --text-light: #5a5346;
-    --border: #c3b48a;
-    --brand: #197082;
-    --bg: #EEE5BF;
-    --bg-raised: #F5EFD6;
+    --bg: #171513;              /* page */
+    --bg-raised: #221F1B;       /* header, panels, cards */
+    --border: #332E27;          /* hairline dividers */
+    --border-strong: #766E62;   /* input outlines; 3:1 against both backgrounds */
+    --text: #F0EBE0;
+    --text-light: #9C9389;
+    --brand: #E09B3D;           /* amber: only on things you can tap */
+    --brand-hover: #EBAA52;
+    --text-on-brand: #171513;
+    --map-shape: #6E8159;       /* fill of the drawn area */
+    --ok: #7FD39A;
+    --error: #F2897D;
+    --topbar-height: 64px;
 }
 
 * { box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
     margin: 0;
     background: var(--bg);
-    font: 15px/1.5 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     color: var(--text);
+    font: 16px/1.5 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-a { color: inherit; }
+a { color: var(--brand); }
+a:hover { color: var(--brand-hover); }
 
-/* ============================================================
-   Shared layout — header, footer, and the narrow page wrapper
-   used by the post form, review queue, and job pages.
-   ============================================================ */
-header {
-    padding: 18px 20px 10px;
-}
+h1, h2, h3 { margin: 0; line-height: 1.2; }
 
-h1 { margin: 0; }
+.meta { margin: 0; color: var(--text-light); font-size: 13px; }
 
-/* Logo is an outlined SVG, so the teal H is baked in at #197082.
-   Changing --brand means re-exporting it from Figma. */
-.wordmark {
-    line-height: 0;
-}
-
-.wordmark img {
-    display: block;
-    width: auto;
-    height: 30px;
-}
-
-.wordmark a {
-    display: inline-block;
-}
-
-
-.tagline {
-    margin: 4px 0 0;
-    color: var(--text-light);
-}
-
-.page {
-    max-width: 680px;
-    margin: 0 auto;
-    padding-bottom: 60px;
-}
-
-.form-wrap { padding: 0 20px; }
-
-footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-    padding: 12px 20px 20px;
-    color: var(--text-light);
-    font-size: 13px;
-}
-
-.meta {
-    color: var(--text-light);
-    font-size: 13px;
-}
-
-.exact {
-    color: var(--brand);
-    font-weight: 600;
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }
 
 /* ============================================================
-   Map page
+   Buttons. 44px tall so they're easy to hit with a thumb.
    ============================================================ */
-.controls {
-    display: flex;
+.button {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 0 20px 12px;
-}
-
-.controls button {
-    padding: 7px 14px;
-    border: 0;
-    border-radius: 4px;
-    background: var(--text);
-    color: #fff;
-    font: inherit;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
     cursor: pointer;
 }
 
-#draw-button { background: var(--brand); }
+.button-brand { background: var(--brand); color: var(--text-on-brand); }
+.button-brand:hover { background: var(--brand-hover); color: var(--text-on-brand); }
 
-#clear-button {
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--border);
-}
+.button-outline { border-color: var(--brand); color: var(--brand); background: transparent; }
+.button-outline:hover { color: var(--brand-hover); border-color: var(--brand-hover); }
 
-#job-input {
+.button-quiet { border-color: var(--border-strong); color: var(--text); background: transparent; }
+.button-quiet:hover { background: var(--bg-raised); color: var(--text); }
+
+/* ============================================================
+   Logo
+   ============================================================ */
+.wordmark { display: inline-flex; line-height: 0; }
+.wordmark img { display: block; width: auto; height: 26px; }
+h1.wordmark { margin: 0; }
+
+/* ============================================================
+   Top bar (map page)
+   ============================================================ */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: var(--topbar-height);
+    padding: 0 24px;
     background: var(--bg-raised);
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font: inherit;
-    min-width: 200px;
+    border-bottom: 1px solid var(--border);
 }
 
-#status { color: var(--text-light); }
+.topbar-nav { display: flex; align-items: center; gap: 16px; }
+.nav-link { color: var(--text-light); text-decoration: none; }
+.nav-link:hover { color: var(--text); }
 
-.post-link { margin-left: auto; }
+/* ============================================================
+   Map page layout. Desktop: list left, map right.
+   Phone: toolbar, then map, then the list.
+   ============================================================ */
+.app {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "toolbar map"
+        "panel   map";
+    height: calc(100dvh - var(--topbar-height));
+}
 
-#map {
-    height: calc(100vh - 190px);
-    min-height: 420px;
+.toolbar {
+    grid-area: toolbar;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+.search { flex: 1 1 100%; }
+
+.search input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text);
+    font: inherit;
+}
+
+.search input::placeholder { color: var(--text-light); }
+
+.mapwrap { grid-area: map; position: relative; min-height: 320px; }
+#map { position: absolute; inset: 0; }
+
+.panel {
+    grid-area: panel;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+}
+
+.panel-intro { padding: 24px 24px 16px; }
+.panel-intro h1 { font-size: 28px; letter-spacing: -0.4px; }
+.lede { margin: 8px 0 0; color: var(--text-light); }
+
+.panel-head {
+    padding: 16px 24px;
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 }
+.panel-head h2 { font-size: 20px; }
+.panel-head .meta { margin-top: 4px; }
 
-#map.drawing {
-    cursor: crosshair;
-    touch-action: none;
+/* ============================================================
+   Overlays on the map
+   ============================================================ */
+.map-chip {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text);
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(23, 21, 19, 0.25);
 }
 
-#map.drawing .leaflet-grab { cursor: crosshair; }
+.draw-bar {
+    display: none;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 8px 8px 16px;
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(23, 21, 19, 0.3);
+}
 
-.job-marker {
+body.drawing .draw-bar { display: flex; }
+body.drawing .map-chip { display: none; }
+
+/* Without touch-action:none the phone scrolls the page instead of tracing.
+   Markers stop catching the pointer so a drag that crosses one keeps drawing,
+   and nothing gets text-selected along the way. */
+body.drawing { -webkit-user-select: none; user-select: none; }
+body.drawing #map { cursor: crosshair; touch-action: none; }
+body.drawing #map .maplibregl-canvas-container { cursor: crosshair; }
+body.drawing .pin { pointer-events: none; }
+
+/* Labels only; let drags pass through them to the map. */
+.map-chip,
+.legend { pointer-events: none; }
+
+.legend {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text-light);
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(23, 21, 19, 0.25);
+}
+
+.legend > span { display: flex; align-items: center; gap: 8px; }
+
+/* ============================================================
+   Markers. A number means town-level: every job listed in that
+   town shares one point. A plain dot means an exact street address.
+   ============================================================ */
+.pin {
     display: grid;
     place-items: center;
+    padding: 0;
+    border: 0;
+    font: 600 13px/1 "Public Sans", system-ui, sans-serif;
+    font-style: normal;
+    cursor: pointer;
+}
+
+.pin-town {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 14px;
     background: var(--brand);
-    color: #fff;
-    border-radius: 50%;
-    font-size: 12px;
-    font-weight: 600;
+    color: var(--text-on-brand);
     box-shadow: 0 0 0 2px var(--bg);
 }
 
-.popup h3 {
-    margin: 0 0 2px;
-    font-size: 15px;
+/* 24px hit area around a 12px dot, so it's tappable. */
+.pin-exact { width: 24px; height: 24px; background: transparent; }
+
+.pin-exact::after {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 0 3px var(--text), 0 0 0 4px var(--bg);
 }
 
-.popup .precision {
-    margin: 0 0 8px;
-    color: var(--text-light);
-    font-size: 12px;
-}
-
-.popup ul { margin: 0; padding-left: 16px; }
-.popup li { margin-bottom: 7px; }
-
-.popup .employer,
-.popup .source {
-    display: block;
-    color: var(--text-light);
-    font-size: 12px;
-}
+.pin.is-active { transform: scale(1.18); z-index: 2; }
+.legend .pin { cursor: default; }
 
 /* ============================================================
-   Leaflet's own elements. It builds these itself, so styling the
-   map means overriding its class names rather than our markup.
+   Popups
    ============================================================ */
-
-/* Tiles are images, so a filter is the only way to recolor the
-   basemap. Try grayscale(1), saturate(0.4), sepia(0.2). */
-.leaflet-tile-pane { filter: saturate(0.6) brightness(1.02) sepia(0.18); }
-
-.leaflet-bar {
-    border: 1px solid var(--border);
+.maplibregl-popup-content {
+    padding: 12px 16px;
     border-radius: 6px;
-    box-shadow: none;
-    overflow: hidden;
-}
-
-.leaflet-bar a {
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-}
-
-.leaflet-bar a:hover { background: var(--bg-raised); }
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
     background: var(--bg-raised);
     color: var(--text);
-    box-shadow: none;
+    box-shadow: 0 4px 16px rgba(23, 21, 19, 0.35);
 }
 
-.leaflet-popup-content-wrapper {
-    border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(30, 32, 25, 0.14);
-}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--bg-raised); }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--bg-raised); }
+.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--bg-raised); }
+.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--bg-raised); }
 
-.leaflet-popup-content { margin: 12px 14px; font: inherit; }
-
-.leaflet-control-attribution {
-    font-size: 11px;
-    background: rgba(238, 229, 191, 0.85);
+.maplibregl-popup-close-button {
+    width: 32px;
+    height: 32px;
     color: var(--text-light);
+    font-size: 20px;
+}
+
+.popup { max-height: 280px; overflow-y: auto; }
+.popup-place { margin: 0 24px 0 0; font-weight: 600; }
+.popup-meta { margin: 4px 0 12px; color: var(--text-light); font-size: 13px; }
+.popup ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.popup li a { color: var(--text); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.popup li a:hover { color: var(--brand); }
+.popup li span { display: block; color: var(--text-light); font-size: 13px; }
+
+/* ============================================================
+   Result list
+   ============================================================ */
+.results { margin: 0; padding: 0; list-style: none; }
+
+.job {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.job:hover { background: var(--bg-raised); }
+.job.is-active { background: var(--bg-raised); box-shadow: inset 3px 0 0 var(--brand); }
+
+/* Federal titles run long and arrive in capitals; clamp rather than overflow. */
+.job-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.job-title:hover { color: var(--brand); }
+
+.job-employer { margin: 4px 0 0; color: var(--text-light); }
+
+.job-where {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 0;
+    font-size: 13px;
+}
+
+.job-meta { margin: 4px 0 0; color: var(--text-light); font-size: 13px; }
+.job-meta .pay { color: var(--text); }
+.more { color: var(--text-light); }
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-light);
+    font-size: 13px;
+}
+
+.tag-exact { color: var(--text); }
+.tag-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+
+.show-more { width: calc(100% - 48px); margin: 16px 24px 24px; }
+
+/* ============================================================
+   Employer section and footer
+   ============================================================ */
+.hiring {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 48px 24px;
+    border-top: 1px solid var(--border);
+}
+
+.hiring h2 { font-size: 28px; letter-spacing: -0.4px; }
+.hiring p { max-width: 560px; margin: 8px 0 0; color: var(--text-light); }
+
+.site-footer {
+    display: grid;
+    gap: 12px;
+    padding: 32px 24px 48px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-raised);
+}
+
+.footer-nav { display: flex; gap: 24px; }
+.footer-nav a { color: var(--text-light); text-decoration: none; }
+.footer-nav a:hover { color: var(--text); }
+
+/* ============================================================
+   Phone
+   ============================================================ */
+@media (max-width: 760px) {
+    .topbar { padding: 0 16px; }
+    .nav-link { display: none; }
+
+    .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 58dvh auto;
+        grid-template-areas: "toolbar" "map" "panel";
+        height: auto;
+    }
+
+    .toolbar { padding: 12px 16px; border-right: 0; }
+    .toolbar .button { flex: 1 1 0; }
+
+    .panel { overflow: visible; border-right: 0; }
+    .panel-intro, .panel-head { padding-left: 16px; padding-right: 16px; }
+    .job { padding: 16px; }
+
+    /* Drawing gets the whole screen; a thumb can't trace inside a scrolling page. */
+    .mapwrap.fullscreen { position: fixed; inset: 0; z-index: 1000; min-height: 0; }
+
+    /* One short row, so the key doesn't cover the markers it explains. */
+    .legend { bottom: 40px; grid-auto-flow: column; gap: 16px; padding: 8px 12px; }
+    .legend-detail { display: none; }
+    .show-more { width: calc(100% - 32px); margin: 16px; }
+
+    .hiring { flex-direction: column; align-items: flex-start; padding: 32px 16px; }
+    .site-footer { padding: 32px 16px 48px; }
 }
 
 /* ============================================================
-   Forms — the employer post page and the review queue
+   Narrow pages: post a job, review queue, job pages
    ============================================================ */
+.page { max-width: 680px; margin: 0 auto; padding-bottom: 64px; }
+.page > header { padding: 24px 24px 16px; }
+
+.tagline { margin: 8px 0 0; color: var(--text-light); }
+
+.form-wrap { padding: 0 24px; }
+
 form label,
 #auth label {
     display: block;
@@ -222,13 +437,15 @@ form label,
 form input,
 form textarea,
 #auth input {
-    background: var(--bg-raised);
     display: block;
     width: 100%;
-    margin-top: 5px;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
+    min-height: 44px;
+    margin-top: 4px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text);
     font: inherit;
     font-weight: 400;
 }
@@ -239,6 +456,7 @@ form small {
     display: block;
     margin-top: 4px;
     color: var(--text-light);
+    font-size: 13px;
     font-weight: 400;
 }
 
@@ -246,77 +464,86 @@ form small {
 
 form button,
 #auth button {
-    padding: 9px 18px;
+    min-height: 44px;
+    padding: 0 24px;
     border: 0;
-    border-radius: 4px;
-    background: var(--text);
-    color: #fff;
-    font: inherit;
+    border-radius: 6px;
+    background: var(--brand);
+    color: var(--text-on-brand);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
 }
 
-form button:disabled { background: var(--text-light); }
+form button:hover,
+#auth button:hover { background: var(--brand-hover); }
+
+form button:disabled { background: var(--border-strong); color: var(--text); cursor: default; }
 
 #form-status,
-#queue-status {
-    margin-top: 12px;
-    color: var(--text-light);
-}
+#queue-status { margin-top: 12px; color: var(--text-light); }
 
-.ok { color: #15803d; }
-.error { color: #b91c1c; }
+.ok { color: var(--ok); }
+.error { color: var(--error); }
 
 .queued {
+    margin-bottom: 12px;
+    padding: 16px;
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
+    background: var(--bg-raised);
 }
 
 .queued h3 { margin: 0 0 4px; font-size: 16px; }
 .queued .meta { margin: 0 0 4px; }
+.queued .exact { color: var(--brand); font-weight: 600; }
+.queued code { color: var(--text); overflow-wrap: anywhere; }
 
 .actions { display: flex; gap: 8px; margin-top: 8px; }
 
 .actions .reject {
+    border: 1px solid var(--border-strong);
     background: transparent;
     color: var(--text);
-    border: 1px solid var(--border);
 }
 
-/* ============================================================
-   Job pages — the 71 URLs Google indexes
-   ============================================================ */
-.posting h2 {
-    margin: 0 0 6px;
-    font-size: 22px;
-    line-height: 1.25;
-}
-
-.posting .meta { margin: 0 0 4px; }
+/* Job pages */
+.posting h1 { font-size: 28px; letter-spacing: -0.4px; overflow-wrap: anywhere; }
+.posting .meta { margin: 4px 0 0; }
+.posting .exact { color: var(--text); font-weight: 600; }
 
 .notice {
-    margin: 14px 0;
-    padding: 10px 12px;
-    border-left: 3px solid var(--border);
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 3px solid var(--border-strong);
     background: var(--bg-raised);
     color: var(--text-light);
-    font-size: 14px;
 }
 
-.description {
-    margin: 18px 0;
-    white-space: pre-wrap;
-}
+.description { margin: 24px 0; overflow-wrap: anywhere; }
+.description h2 { margin: 32px 0 8px; font-size: 20px; }
+.description p { margin: 0; white-space: pre-wrap; color: var(--text); }
 
-.apply { margin: 22px 0; }
+.apply { margin: 24px 0; }
 
 .apply-button {
-    display: inline-block;
-    padding: 10px 20px;
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 24px;
+    border-radius: 6px;
     background: var(--brand);
-    color: #fff;
-    text-decoration: none;
+    color: var(--text-on-brand);
     font-weight: 600;
+    text-decoration: none;
+}
+
+.apply-button:hover { background: var(--brand-hover); color: var(--text-on-brand); }
+
+.page footer {
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 13px;
 }
