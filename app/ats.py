@@ -22,7 +22,11 @@ PATTERNS = [
     ("workday", r"([A-Za-z0-9_-]+)\.wd\d+\.myworkdayjobs\.com/(?:wday/cxs/[^/]+/)?([A-Za-z0-9_-]+)"),
     ("icims", r"([A-Za-z0-9_-]+)\.icims\.com"),
     ("successfactors", r"career\d*\.successfactors\.com/career\?company=([A-Za-z0-9_-]+)"),
-    ("taleo", r"([A-Za-z0-9_-]+)\.taleo\.net"),
+    # Taleo ships as two products. Business Edition puts every customer on a
+    # shared *.tbe.taleo.net host, so the tenant is the path segment, not the
+    # subdomain. Enterprise gives each customer a subdomain plus a section.
+    ("taleo_business", r"([A-Za-z0-9-]+\.tbe\.taleo\.net/[A-Za-z0-9]+)/ats/careers"),
+    ("taleo", r"([A-Za-z0-9-]+)\.taleo\.net/careersection/([A-Za-z0-9_-]+)"),
 ]
 
 IGNORED_TOKENS = {"www", "jobs", "careers", "api", "embed", "job_board", "boards"}
