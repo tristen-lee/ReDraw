@@ -188,7 +188,7 @@ def run(source, fetch):
 
 
 def run_usajobs():
-    return run("usajobs", usajobs.fetch_corridor_jobs)
+    return run("usajobs", usajobs.fetch_region_jobs)
 
 
 if __name__ == "__main__":

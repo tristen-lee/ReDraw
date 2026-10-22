@@ -9,16 +9,10 @@ API_URL = "https://data.usajobs.gov/api/Search"
 RESULTS_PER_PAGE = 500
 TIMEOUT_SECONDS = 30
 
-CORRIDOR_TOWNS = [
-    "Clatskanie, Oregon",
-    "Rainier, Oregon",
-    "Saint Helens, Oregon",
-    "Scappoose, Oregon",
-    "Vernonia, Oregon",
-]
-
-# Oregon + SW Washington, drawn generously; exact shape filtering happens in PostGIS.
-REGION_BOUNDS = {"min_lat": 41.9, "max_lat": 47.5, "min_lon": -124.8, "max_lon": -116.4}
+# The launch region. Adding a state is adding a name here: USAJobs matches a
+# bare state name exactly ("Washington" means the state, not DC), and the same
+# names filter which of a posting's locations we keep.
+REGION_STATES = ["Oregon", "Washington"]
 
 
 def headers():
@@ -60,7 +54,7 @@ def search_location(location_name, keyword=None):
 
 
 def search(location_names=None, keyword=None):
-    locations = location_names or CORRIDOR_TOWNS
+    locations = location_names or REGION_STATES
     by_id = {}
     for location_name in locations:
         for item in search_location(location_name, keyword=keyword):
@@ -77,12 +71,10 @@ def has_coordinates(location):
 
 
 def in_region(location):
-    latitude = location.get("Latitude")
-    longitude = location.get("Longitude")
-    return (
-        REGION_BOUNDS["min_lat"] <= latitude <= REGION_BOUNDS["max_lat"]
-        and REGION_BOUNDS["min_lon"] <= longitude <= REGION_BOUNDS["max_lon"]
-    )
+    # A bounding box around two states sweeps in Idaho's panhandle and part of
+    # BC, so filter on the state USAJobs names instead.
+    name = location.get("LocationName") or ""
+    return name.rsplit(",", 1)[-1].strip() in REGION_STATES
 
 
 def as_text(value):
@@ -148,12 +140,12 @@ def normalize(item):
     }
 
 
-def fetch_corridor_jobs():
+def fetch_region_jobs():
     return [normalize(item) for item in search()]
 
 
 if __name__ == "__main__":
-    jobs = fetch_corridor_jobs()
+    jobs = fetch_region_jobs()
     placed = [job for job in jobs if job["locations"]]
     location_count = sum(len(job["locations"]) for job in placed)
 
