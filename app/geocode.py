@@ -12,7 +12,7 @@ def geocode_address(address):
     response = requests.get(
         ONELINE_URL,
         params={"address": address, "benchmark": BENCHMARK, "format": "json"},
-        headers={"User-Agent": "Cupholder/0.1 (tristen.lee1221@gmail.com)"},
+        headers={"User-Agent": "Cupholder/0.1 (+https://cupholder.work)"},
         timeout=TIMEOUT_SECONDS,
     )
     response.raise_for_status()

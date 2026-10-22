@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 
 import requests
 
+from app.ats import USER_AGENT
+
 API_URL = "https://api.lever.co/v0/postings/{site}"
 PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30
@@ -10,7 +12,7 @@ DELAY_SECONDS = 1
 
 
 def headers():
-    return {"User-Agent": "ReDraw/0.1 (tristen.lee1221@gmail.com)"}
+    return {"User-Agent": USER_AGENT}
 
 
 def site_exists(site):

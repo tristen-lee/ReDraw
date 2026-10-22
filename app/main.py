@@ -3,6 +3,7 @@
 import os
 import re
 import secrets
+from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -22,6 +23,28 @@ NON_HUMAN_AGENTS = re.compile(
 templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
+
+
+# The onrender.com hostname keeps serving the site after the custom domain is
+# live, and Google will index both copies unless one redirects. Three guards:
+# it does nothing until SITE_BASE_URL is set, so it can't send traffic to a
+# domain that doesn't resolve yet; it skips /api/ so Render's health check never
+# sees a 301; and it compares hosts so a misconfigured base can't loop.
+@app.middleware("http")
+async def canonical_host(request: Request, call_next):
+    base = os.environ.get("SITE_BASE_URL", "").rstrip("/")
+    host = request.headers.get("host", "").split(":")[0]
+    if (
+        base
+        and host.endswith(".onrender.com")
+        and host != urlsplit(base).hostname
+        and not request.url.path.startswith("/api/")
+    ):
+        target = base + request.url.path
+        if request.url.query:
+            target += "?" + request.url.query
+        return RedirectResponse(target, status_code=301)
+    return await call_next(request)
 
 
 # Browsers happily serve a stale map.js for hours, which shows up as a 405

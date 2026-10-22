@@ -3,7 +3,7 @@ import re
 import requests
 
 TIMEOUT_SECONDS = 15
-USER_AGENT = "ReDraw/0.1 (tristen.lee1221@gmail.com)"
+USER_AGENT = "Cupholder/0.1 (+https://cupholder.work)"
 
 CAREERS_PATHS = ("/careers", "/jobs", "/careers/", "/jobs/", "/about/careers", "/company/careers", "/join-us")
 

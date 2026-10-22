@@ -6,8 +6,8 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-USER_AGENT = "ReDraw/0.1 (tristen.lee1221@gmail.com)"
-ROBOTS_AGENT = "ReDraw"
+from app.ats import USER_AGENT
+ROBOTS_AGENT = "Cupholder"
 DELAY_SECONDS = 2
 TIMEOUT_SECONDS = 10
 MAX_JOB_PAGES = 8
