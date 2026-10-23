@@ -4,7 +4,8 @@ import smtplib
 from email.message import EmailMessage
 from email.utils import formataddr
 
-log = logging.getLogger(__name__)
+# uvicorn's logger is the one Render shows at INFO, so sends are visible too.
+log = logging.getLogger("uvicorn.error")
 
 TIMEOUT_SECONDS = 20
 
@@ -31,6 +32,7 @@ def send(to, subject, body):
         with smtplib.SMTP_SSL(os.environ.get("SMTP_HOST", "smtp.zoho.com"), 465, timeout=TIMEOUT_SECONDS) as smtp:
             smtp.login(sender, os.environ["SMTP_PASSWORD"])
             smtp.send_message(message)
+        log.info("mail sent to %s: %s", to, subject)
         return True
     except (smtplib.SMTPException, OSError) as exc:
         log.error("mail to %s failed: %s", to, exc)
