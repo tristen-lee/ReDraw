@@ -3,7 +3,7 @@ import sys
 
 from psycopg.types.json import Jsonb
 
-from app import db, employers, moderation, places, usajobs
+from app import db, employers, mailer, moderation, places, usajobs
 
 # A posting listing this many duty stations is a standing register, not a vacancy
 # at any one of them.
@@ -121,36 +121,36 @@ def expire_missing(cur, source, run_started_at, skip_employer_ids=()):
     return cur.rowcount
 
 
-def run(source, fetch):
-    with db.connect() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "insert into ingest_runs (source, status) values (%s, 'running') returning id, started_at",
-                (source,),
-            )
-            run_id, started_at = cur.fetchone()
+def mark_failed(run_id, exc):
+    with db.connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "update ingest_runs set status = 'failed', finished_at = now(), error_message = %s where id = %s",
+            (f"{type(exc).__name__}: {exc}"[:2000], run_id),
+        )
         conn.commit()
 
-        try:
-            result = fetch()
-            jobs = result["jobs"] if isinstance(result, dict) else result
-            failed = result.get("failed", []) if isinstance(result, dict) else []
-            if failed and not jobs and len(failed) == result.get("employers", len(failed)):
-                raise RuntimeError("every employer failed: " + "; ".join(f["error"] for f in failed[:5]))
-        except Exception as exc:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    update ingest_runs set status = 'failed', finished_at = now(), error_message = %s
-                    where id = %s
-                    """,
-                    (f"{type(exc).__name__}: {exc}"[:2000], run_id),
-                )
-            conn.commit()
-            raise
+
+# A fetch can run for minutes, and the Supabase pooler drops a connection
+# left idle that long. So no connection is held open across it: one to log
+# the start, a fresh one to write the results.
+def run(source, fetch):
+    with db.connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "insert into ingest_runs (source, status) values (%s, 'running') returning id, started_at",
+            (source,),
+        )
+        run_id, started_at = cur.fetchone()
+        conn.commit()
+
+    try:
+        result = fetch()
+        jobs = result["jobs"] if isinstance(result, dict) else result
+        failed = result.get("failed", []) if isinstance(result, dict) else []
+        if failed and not jobs and len(failed) == result.get("employers", len(failed)):
+            raise RuntimeError("every employer failed: " + "; ".join(f["error"] for f in failed[:5]))
 
         added = updated = 0
-        with conn.cursor() as cur:
+        with db.connect() as conn, conn.cursor() as cur:
             for job in jobs:
                 if upsert_job(cur, job):
                     added += 1
@@ -189,7 +189,10 @@ def run(source, fetch):
                 """,
                 (len(jobs), added, updated, expired, note, run_id),
             )
-        conn.commit()
+            conn.commit()
+    except Exception as exc:
+        mark_failed(run_id, exc)
+        raise
 
     return {
         "run_id": run_id,
@@ -197,6 +200,7 @@ def run(source, fetch):
         "added": added,
         "updated": updated,
         "expired": expired,
+        "previous": previous,
         "note": note,
     }
 
@@ -233,6 +237,19 @@ def run_sweep():
     return {"direct_posts_expired": expired}
 
 
+# Failed runs, collapsed counts and broken employer feeds all mail the owner.
+def alert(source, result=None, error=None):
+    if error:
+        mailer.notify_owner(f"Ingest failed: {source}", f"{source} failed and nothing was expired.\n\n{error}")
+    elif result and result["previous"] and result["found"] < result["previous"] * SUSPICIOUS_DROP_RATIO:
+        mailer.notify_owner(
+            f"Suspicious drop: {source}",
+            f"{source} found {result['found']} jobs, down from {result['previous']}. Nothing was expired.",
+        )
+    elif result and result.get("note") and "failed:" in result["note"]:
+        mailer.notify_owner(f"Some {source} employers failed", result["note"])
+
+
 # Each source runs on its own; one failing never stops the rest.
 def main(sources):
     failures = 0
@@ -245,9 +262,11 @@ def main(sources):
             else:
                 result = run_platform(source)
             print(source, json.dumps(result, default=str))
+            alert(source, result=result)
         except Exception as exc:
             failures += 1
             print(source, "FAILED", f"{type(exc).__name__}: {exc}")
+            alert(source, error=f"{type(exc).__name__}: {exc}")
     return 1 if failures else 0
 
 

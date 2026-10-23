@@ -8,6 +8,10 @@ on:
 jobs:
   usajobs:
     runs-on: ubuntu-latest
+    # Lets every step email an alert when a source fails or collapses.
+    env:
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 

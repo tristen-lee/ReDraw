@@ -5,12 +5,12 @@ import re
 import secrets
 from urllib.parse import urlsplit
 
-from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import db, moderation, pages, submissions
+from app import db, mailer, moderation, pages, submissions
 from app.models import (
     Job, JobLocation, JobSubmission, OptOutRequest, PlaceRequest, RemoveRequest, ReviewRequest, SearchRequest,
     is_safe_link,
@@ -157,7 +157,7 @@ REPORT_REASONS = ("scam", "filled", "wrong_location", "other")
 
 
 @app.post("/api/jobs/submit")
-def submit_job(request: Request, payload: JobSubmission):
+def submit_job(request: Request, payload: JobSubmission, background: BackgroundTasks):
     # A filled honeypot gets the same answer a person would, so the bot
     # has nothing to learn from.
     if payload.website:
@@ -174,11 +174,18 @@ def submit_job(request: Request, payload: JobSubmission):
         conn.commit()
 
     location = result["location"]
+    site = site_base(request)
+    manage_url = f"{site}/manage/{result['manage_token']}"
+    background.add_task(
+        mailer.posting_received, payload.contact_email, payload.title, payload.employer, manage_url, location is not None
+    )
+    background.add_task(mailer.new_submission, site, payload.title, payload.employer, location is not None)
     return {
         "status": "pending review",
         "placed": location is not None,
         "location": location["raw"] if location else payload.street_address,
-        "manage_url": f"{site_base(request)}/manage/{result['manage_token']}",
+        "manage_url": manage_url,
+        "emailed": mailer.configured(),
     }
 
 
