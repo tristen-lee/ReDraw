@@ -5,13 +5,16 @@ import re
 import secrets
 from urllib.parse import urlsplit
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import db, pages, submissions
-from app.models import Job, JobLocation, JobSubmission, PlaceRequest, ReviewRequest, SearchRequest, is_safe_link
+from app import db, moderation, pages, submissions
+from app.models import (
+    Job, JobLocation, JobSubmission, OptOutRequest, PlaceRequest, RemoveRequest, ReviewRequest, SearchRequest,
+    is_safe_link,
+)
 
 # Link-preview fetchers and crawlers that ignore robots.txt would otherwise
 # inflate the one number shown to employers.
@@ -148,9 +151,23 @@ def search(request: SearchRequest) -> list[Job]:
     return list(jobs.values())
 
 
+SUBMISSIONS_PER_HOUR = 5
+REPORTS_PER_HOUR = 10
+REPORT_REASONS = ("scam", "filled", "wrong_location", "other")
+
+
 @app.post("/api/jobs/submit")
-def submit_job(payload: JobSubmission):
+def submit_job(request: Request, payload: JobSubmission):
+    # A filled honeypot gets the same answer a person would, so the bot
+    # has nothing to learn from.
+    if payload.website:
+        return {"status": "pending review", "placed": False, "location": payload.street_address}
+
     with db.connect() as conn, conn.cursor() as cur:
+        if not moderation.allow(cur, "submit", request, SUBMISSIONS_PER_HOUR):
+            conn.commit()
+            raise HTTPException(429, "That's a lot of posts in an hour. Try again later, or email tristen@cupholder.work.")
+        conn.commit()
         result, error = submissions.submit(cur, payload)
         if result is None:
             raise HTTPException(422, error or "Could not accept that submission.")
@@ -159,10 +176,53 @@ def submit_job(payload: JobSubmission):
     location = result["location"]
     return {
         "status": "pending review",
-        "job_id": result["job_id"],
         "placed": location is not None,
         "location": location["raw"] if location else payload.street_address,
+        "manage_url": f"{site_base(request)}/manage/{result['manage_token']}",
     }
+
+
+@app.get("/manage/{token}", response_class=HTMLResponse)
+def manage_page(request: Request, token: str, done: str | None = None):
+    with db.connect() as conn, conn.cursor() as cur:
+        job = moderation.find_by_token(cur, token)
+    if job is None:
+        raise HTTPException(404, "That link doesn't match a posting.")
+    return templates.TemplateResponse(request, "manage.html", {"job": job, "token": token, "done": done})
+
+
+@app.post("/manage/{token}/{action}")
+def manage_action(token: str, action: str):
+    if action not in ("close", "renew"):
+        raise HTTPException(404)
+    with db.connect() as conn, conn.cursor() as cur:
+        job = moderation.find_by_token(cur, token)
+        if job is None:
+            raise HTTPException(404, "That link doesn't match a posting.")
+        if action == "close":
+            moderation.close(cur, job["id"], "closed by employer")
+        else:
+            moderation.renew(cur, job["id"])
+        conn.commit()
+    return RedirectResponse(f"/manage/{token}?done={action}", status_code=303)
+
+
+@app.post("/jobs/{job_id}/report")
+def report_job(
+    request: Request,
+    job_id: int,
+    reason: str = Form(...),
+    details: str = Form(default="", max_length=1000),
+    website: str = Form(default=""),
+):
+    if reason not in REPORT_REASONS:
+        raise HTTPException(422, "Pick a reason.")
+    if not website:
+        with db.connect() as conn, conn.cursor() as cur:
+            if moderation.allow(cur, "report", request, REPORTS_PER_HOUR):
+                moderation.report(cur, job_id, reason, details.strip())
+            conn.commit()
+    return RedirectResponse(f"/jobs/{job_id}?reported=1", status_code=303)
 
 
 @app.get("/api/admin/pending", dependencies=[Depends(require_admin)])
@@ -191,6 +251,40 @@ def place_job(job_id: int, request: PlaceRequest):
             raise HTTPException(422, error)
         conn.commit()
     return {"job_id": job_id, "location": location["raw"], "precision": location["precision"]}
+
+
+@app.get("/api/admin/reports", dependencies=[Depends(require_admin)])
+def reports():
+    with db.connect() as conn, conn.cursor() as cur:
+        return moderation.open_reports(cur)
+
+
+@app.post("/api/admin/reports/{job_id}/dismiss", dependencies=[Depends(require_admin)])
+def dismiss_reports(job_id: int):
+    with db.connect() as conn, conn.cursor() as cur:
+        moderation.resolve_reports(cur, job_id)
+        conn.commit()
+    return {"job_id": job_id, "dismissed": True}
+
+
+@app.post("/api/admin/jobs/{job_id}/remove", dependencies=[Depends(require_admin)])
+def remove_job(job_id: int, request: RemoveRequest):
+    with db.connect() as conn, conn.cursor() as cur:
+        cur.execute("select title, employer_name_raw from jobs where id = %s", (job_id,))
+        row = cur.fetchone()
+        if row is None:
+            raise HTTPException(404, "No job with that id.")
+        removed = moderation.remove_job(cur, job_id, request.note)
+        conn.commit()
+    return {"job_id": job_id, "title": row[0], "employer": row[1], "removed": removed}
+
+
+@app.post("/api/admin/employers/opt-out", dependencies=[Depends(require_admin)])
+def opt_out(request: OptOutRequest):
+    with db.connect() as conn, conn.cursor() as cur:
+        removed = moderation.opt_out(cur, request.name.strip())
+        conn.commit()
+    return {"employer": request.name.strip(), "jobs_removed": removed}
 
 
 @app.get("/api/admin/clicks", dependencies=[Depends(require_admin)])
@@ -289,7 +383,7 @@ def site_base(request: Request):
 
 @app.get("/jobs/{job_id}", response_class=HTMLResponse)
 @app.get("/jobs/{job_id}/{slug}", response_class=HTMLResponse)
-def job_page(request: Request, job_id: int, slug: str | None = None):
+def job_page(request: Request, job_id: int, slug: str | None = None, reported: str | None = None):
     with db.connect() as conn, conn.cursor() as cur:
         job = pages.load(cur, job_id)
 
@@ -298,7 +392,7 @@ def job_page(request: Request, job_id: int, slug: str | None = None):
 
     canonical = f"{site_base(request)}/jobs/{job['id']}/{job['slug']}"
     if slug != job["slug"]:
-        return RedirectResponse(canonical, status_code=301)
+        return RedirectResponse(canonical + ("?reported=1" if reported else ""), status_code=301)
 
     return templates.TemplateResponse(
         request,
@@ -306,6 +400,7 @@ def job_page(request: Request, job_id: int, slug: str | None = None):
         {
             "job": job,
             "canonical": canonical,
+            "reported": bool(reported),
             # Standing registers are not vacancies at a place; marking them up as
             # JobPosting would put low-quality listings in Google's index.
             "noindex": job["is_blanket"],

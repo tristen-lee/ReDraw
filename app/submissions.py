@@ -2,14 +2,14 @@ import uuid
 
 import requests
 
-from app import geocode
+from app import geocode, moderation
 
 INSERT_JOB = """
 insert into jobs (
     source, source_id, employer_name_raw, title, description, url,
-    contact_email, submitted_by, status, employment_type, submitted_address
+    contact_email, submitted_by, status, employment_type, submitted_address, manage_token_hash
 )
-values (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s)
+values (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s)
 returning id
 """
 
@@ -21,9 +21,14 @@ values (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
 
 # Direct posts are exact or they don't go live. An address the geocoder misses
 # still gets submitted, and waits in the review queue for a hand placement.
-def locate(address):
+# Kept short: a slow lookup holds a server worker, and the form is public.
+SUBMIT_GEOCODE_TIMEOUT = 10
+MAX_PENDING = 200
+
+
+def locate(address, timeout=geocode.TIMEOUT_SECONDS):
     try:
-        match = geocode.geocode_address(address)
+        match = geocode.geocode_address(address, timeout)
     except requests.RequestException:
         return None
     if match is None:
@@ -45,8 +50,13 @@ def save_location(cur, job_id, location):
 
 
 def submit(cur, payload):
+    cur.execute("select count(*) from jobs where status = 'pending'")
+    if cur.fetchone()[0] >= MAX_PENDING:
+        return None, "We're behind on reviewing posts. Try again tomorrow, or email tristen@cupholder.work."
+
     address = f"{payload.street_address.strip()}, {payload.town.strip()}"
-    location = locate(address)
+    location = locate(address, SUBMIT_GEOCODE_TIMEOUT)
+    token, token_hash = moderation.new_manage_token()
 
     cur.execute(
         INSERT_JOB,
@@ -61,6 +71,7 @@ def submit(cur, payload):
             payload.contact_email,
             payload.employment_type or None,
             address,
+            token_hash,
         ),
     )
     job_id = cur.fetchone()[0]
@@ -68,7 +79,7 @@ def submit(cur, payload):
     if location:
         save_location(cur, job_id, location)
 
-    return {"job_id": job_id, "location": location}, None
+    return {"job_id": job_id, "location": location, "manage_token": token}, None
 
 
 def place(cur, job_id, address=None, latitude=None, longitude=None):
@@ -137,10 +148,11 @@ def review(cur, job_id, approve, note=None):
     cur.execute(
         """
         update jobs
-        set status = %s, reviewed_at = now(), review_note = %s, updated_at = now()
+        set status = %s, reviewed_at = now(), review_note = %s, updated_at = now(),
+            date_closes = case when %s then coalesce(date_closes, now() + %s * interval '1 day') else date_closes end
         where id = %s and status = 'pending'
         returning id, status
         """,
-        ("live" if approve else "rejected", note, job_id),
+        ("live" if approve else "rejected", note, approve, moderation.LISTING_DAYS, job_id),
     )
     return cur.fetchone()

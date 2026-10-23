@@ -63,6 +63,26 @@
         {% endif %}
     </article>
 
+    {% if reported %}
+    <p class="ok">Thanks. We'll take a look.</p>
+    {% else %}
+    <details class="report">
+        <summary>Report this listing</summary>
+        <form method="post" action="/jobs/{{ job.id }}/report">
+            <label><input type="radio" name="reason" value="scam" required> Looks like a scam</label>
+            <label><input type="radio" name="reason" value="filled"> Job's already filled or gone</label>
+            <label><input type="radio" name="reason" value="wrong_location"> Wrong location</label>
+            <label><input type="radio" name="reason" value="other"> Something else</label>
+            <label>
+                Anything we should know? <span class="optional">optional</span>
+                <textarea name="details" rows="3" maxlength="1000"></textarea>
+            </label>
+            <input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <button type="submit">Send report</button>
+        </form>
+    </details>
+    {% endif %}
+
     <p class="meta"><a href="/">Draw your commute and see what else is nearby →</a></p>
 </main>
 

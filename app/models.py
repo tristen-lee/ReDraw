@@ -28,6 +28,8 @@ class JobSubmission(BaseModel):
     street_address: str = Field(min_length=3, max_length=300)
     apply_url: str = Field(min_length=3, max_length=500)
     employment_type: list[str] | None = Field(default=None, max_length=5)
+    # Hidden on the form. People never see it; bots fill in every field.
+    website: str | None = Field(default=None, max_length=500)
 
     # Employers type a link or an email address. The scheme is added here, then
     # checked, because this lands in an href on a public page and "javascript:..."
@@ -55,6 +57,14 @@ class PlaceRequest(BaseModel):
         if not self.address and (self.latitude is None or self.longitude is None):
             raise ValueError("send an address, or both latitude and longitude")
         return self
+
+
+class RemoveRequest(BaseModel):
+    note: str | None = Field(default=None, max_length=500)
+
+
+class OptOutRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=200)
 
 
 class ReviewRequest(BaseModel):

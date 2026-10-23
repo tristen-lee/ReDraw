@@ -5,7 +5,7 @@ BENCHMARK = "Public_AR_Current"
 TIMEOUT_SECONDS = 30
 
 
-def geocode_address(address):
+def geocode_address(address, timeout=TIMEOUT_SECONDS):
     if not address or not address.strip():
         return None
 
@@ -13,7 +13,7 @@ def geocode_address(address):
         ONELINE_URL,
         params={"address": address, "benchmark": BENCHMARK, "format": "json"},
         headers={"User-Agent": "Cupholder/0.1 (+https://cupholder.work)"},
-        timeout=TIMEOUT_SECONDS,
+        timeout=timeout,
     )
     response.raise_for_status()
 

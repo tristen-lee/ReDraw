@@ -569,3 +569,15 @@ form button:disabled { background: var(--border-strong); color: var(--text); cur
     color: var(--text-light);
     font-size: 13px;
 }
+
+/* Honeypot: off-screen rather than display:none, which some bots skip. */
+.trap { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
+
+.report { margin: 32px 0 16px; color: var(--text-light); }
+.report summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.report form { margin-top: 8px; }
+.report label { font-weight: 400; }
+.report input[type="radio"] { display: inline; width: auto; min-height: 0; margin: 0 8px 0 0; }
+
+.manage-link { margin-top: 8px; color: var(--text); overflow-wrap: anywhere; }
+.form-wrap > form + form { margin-top: 12px; }

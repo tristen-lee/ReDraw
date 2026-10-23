@@ -48,6 +48,16 @@ form.addEventListener('submit', async event => {
         status.textContent = body.placed
             ? `Got it. Placed at ${body.location}. It goes live once reviewed.`
             : `Got it. We'll double-check the address and put it on the map once it's reviewed.`;
+        if (body.manage_url) {
+            const keep = document.createElement('p');
+            keep.className = 'manage-link';
+            keep.append('Bookmark this to renew it or take it down later: ');
+            const link = document.createElement('a');
+            link.href = body.manage_url;
+            link.textContent = body.manage_url;
+            keep.append(link);
+            status.append(keep);
+        }
         form.reset();
     } catch {
         status.className = 'error';

@@ -3,7 +3,7 @@ import sys
 
 from psycopg.types.json import Jsonb
 
-from app import db, employers, places, usajobs
+from app import db, employers, moderation, places, usajobs
 
 # A posting listing this many duty stations is a standing register, not a vacancy
 # at any one of them.
@@ -225,12 +225,25 @@ def run_platform(platform):
     return run(platform, fetch)
 
 
+# Direct posts run 30 days unless the employer renews from their manage link.
+def run_sweep():
+    with db.connect() as conn, conn.cursor() as cur:
+        expired = moderation.sweep(cur)
+        conn.commit()
+    return {"direct_posts_expired": expired}
+
+
 # Each source runs on its own; one failing never stops the rest.
 def main(sources):
     failures = 0
     for source in sources:
         try:
-            result = run_usajobs() if source == "usajobs" else run_platform(source)
+            if source == "sweep":
+                result = run_sweep()
+            elif source == "usajobs":
+                result = run_usajobs()
+            else:
+                result = run_platform(source)
             print(source, json.dumps(result, default=str))
         except Exception as exc:
             failures += 1

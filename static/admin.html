@@ -27,6 +27,36 @@
 
     <p id="queue-status"></p>
     <div id="queue"></div>
+
+    <section id="tools" hidden>
+        <h2>Reports</h2>
+        <p id="reports-status" class="meta"></p>
+        <div id="reports"></div>
+
+        <h2>Take a job down</h2>
+        <form id="remove-form" class="admin-tool">
+            <label>
+                Job link or number
+                <input name="job" required autocomplete="off" placeholder="https://cupholder.work/jobs/1234/...">
+            </label>
+            <label>
+                Why <span class="optional">optional</span>
+                <input name="note" maxlength="500" autocomplete="off">
+            </label>
+            <button type="submit">Take it down</button>
+        </form>
+
+        <h2>Employer opt-out</h2>
+        <form id="optout-form" class="admin-tool">
+            <label>
+                Employer name, exactly as listed
+                <input name="name" required autocomplete="off">
+            </label>
+            <small>Takes down everything they have listed and skips them in every future crawl.</small>
+            <button type="submit">Remove this employer</button>
+        </form>
+        <p id="tools-status"></p>
+    </section>
 </main>
 
 <script src="admin.js"></script>

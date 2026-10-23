@@ -39,6 +39,8 @@ async function loadQueue() {
 
     const jobs = await response.json();
     auth.style.display = 'none';
+    document.getElementById('tools').hidden = false;
+    loadReports();
     queueStatus.textContent = jobs.length ? `${jobs.length} waiting.` : 'Nothing waiting.';
 
     queue.innerHTML = jobs.map(job => `
@@ -121,6 +123,92 @@ queue.addEventListener('click', async event => {
         queueStatus.textContent = typeof result?.detail === 'string' ? result.detail : `Review failed (${response.status}).`;
         card.querySelectorAll('button').forEach(b => (b.disabled = false));
     }
+});
+
+const REASONS = { scam: 'Looks like a scam', filled: 'Filled or gone', wrong_location: 'Wrong location', other: 'Something else' };
+const reportsBox = document.getElementById('reports');
+const reportsStatus = document.getElementById('reports-status');
+const toolsStatus = document.getElementById('tools-status');
+
+function adminPost(path, body) {
+    return fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token() },
+        body: JSON.stringify(body || {})
+    }).then(async response => ({ ok: response.ok, status: response.status, body: await response.json().catch(() => null) }));
+}
+
+function explain(result) {
+    return typeof result.body?.detail === 'string' ? result.body.detail : `Failed (${result.status}).`;
+}
+
+async function loadReports() {
+    const response = await fetch('/api/admin/reports', { headers: { 'X-Admin-Token': token() } });
+    if (!response.ok) {
+        reportsStatus.textContent = `Couldn't load reports (${response.status}).`;
+        return;
+    }
+    const reports = await response.json();
+    reportsStatus.textContent = reports.length ? `${reports.length} open.` : 'No open reports.';
+    reportsBox.innerHTML = reports.map(report => `
+        <article class="queued" data-job="${report.job_id}">
+            <h3><a href="/jobs/${report.job_id}" target="_blank" rel="noopener">${escapeHtml(report.title)}</a></h3>
+            <p class="meta">${escapeHtml(report.employer)} &middot; ${escapeHtml(report.source)}${report.reports_on_job > 1 ? ` &middot; <span class="unplaced">${report.reports_on_job} reports</span>` : ''}</p>
+            <p class="meta"><strong>${escapeHtml(REASONS[report.reason] || report.reason)}</strong>${report.details ? `: ${escapeHtml(report.details)}` : ''}</p>
+            <div class="actions">
+                <button data-report="remove">Take it down</button>
+                <button data-report="dismiss" class="reject">Dismiss</button>
+            </div>
+        </article>
+    `).join('');
+}
+
+reportsBox.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-report]');
+    if (!button) return;
+    const jobId = button.closest('.queued').dataset.job;
+    button.disabled = true;
+    const result = button.dataset.report === 'remove'
+        ? await adminPost(`/api/admin/jobs/${jobId}/remove`, { note: 'reported' })
+        : await adminPost(`/api/admin/reports/${jobId}/dismiss`);
+    if (!result.ok) {
+        reportsStatus.className = 'error';
+        reportsStatus.textContent = explain(result);
+        button.disabled = false;
+        return;
+    }
+    loadReports();
+});
+
+document.getElementById('remove-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.target;
+    const input = form.elements.job.value.trim();
+    const match = input.match(/\/jobs\/(\d+)/) || input.match(/^(\d+)$/);
+    if (!match) {
+        toolsStatus.className = 'error';
+        toolsStatus.textContent = "That doesn't have a job number in it.";
+        return;
+    }
+    const result = await adminPost(`/api/admin/jobs/${match[1]}/remove`, { note: form.elements.note.value.trim() || null });
+    toolsStatus.className = result.ok ? 'ok' : 'error';
+    toolsStatus.textContent = result.ok
+        ? (result.body.removed ? `Took down "${result.body.title}" (${result.body.employer}).` : `"${result.body.title}" was already down.`)
+        : explain(result);
+    if (result.ok) form.reset();
+});
+
+document.getElementById('optout-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.target;
+    const name = form.elements.name.value.trim();
+    if (!confirm(`Remove every listing from "${name}" and never crawl them again?`)) return;
+    const result = await adminPost('/api/admin/employers/opt-out', { name });
+    toolsStatus.className = result.ok ? 'ok' : 'error';
+    toolsStatus.textContent = result.ok
+        ? `${result.body.employer} is opted out. ${result.body.jobs_removed} listing(s) taken down.`
+        : explain(result);
+    if (result.ok) form.reset();
 });
 
 document.getElementById('unlock').addEventListener('click', () => {
