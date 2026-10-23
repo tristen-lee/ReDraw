@@ -369,6 +369,7 @@ def health():
         row = cur.fetchone()
 
     return {
+        "release": os.environ.get("RENDER_GIT_COMMIT", "")[:7] or None,
         "mappable_jobs": mappable,
         "stored_jobs": stored,
         "standing_registers": blanket,
