@@ -3,7 +3,7 @@ import sys
 
 from psycopg.types.json import Jsonb
 
-from app import db, employers, usajobs
+from app import db, employers, places, usajobs
 
 # A posting listing this many duty stations is a standing register, not a vacancy
 # at any one of them.
@@ -201,8 +201,21 @@ def run(source, fetch):
     }
 
 
+# USAJobs sends its own point per duty station, and it varies between postings
+# in the same town. Snapping to our places table keeps one town to one marker.
+def snap_to_places(jobs):
+    cache = {}
+    with db.connect() as conn, conn.cursor() as cur:
+        for job in jobs:
+            for location in job["locations"]:
+                place = places.resolve(cur, location["raw"], cache)
+                if place and location["precision"] == "town":
+                    location["latitude"], location["longitude"] = place["latitude"], place["longitude"]
+    return jobs
+
+
 def run_usajobs():
-    return run("usajobs", usajobs.fetch_region_jobs)
+    return run("usajobs", lambda: snap_to_places(usajobs.fetch_region_jobs()))
 
 
 def run_platform(platform):

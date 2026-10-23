@@ -171,6 +171,8 @@ h1.wordmark { margin: 0; }
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 }
+/* Nothing to report until a shape is drawn. */
+.panel-head:has(#result-count:empty) { display: none; }
 .panel-head h2 { font-size: 20px; }
 .panel-head .meta { margin-top: 4px; }
 

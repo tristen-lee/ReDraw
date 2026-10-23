@@ -3,7 +3,7 @@ import pathlib
 import sys
 
 from app import db, geocode
-from app.ats import detect
+from app.ats import detect, inspect
 from app.employers import ADAPTERS
 from app.pages import slugify
 
@@ -28,13 +28,25 @@ on conflict (slug) do update set
 """
 
 
-# A careers URL on a platform we have no adapter for (Workday, iCIMS...) is
-# still recorded, so the row is there when an adapter or permission comes.
+BOARD_URLS = {
+    "greenhouse": "https://boards.greenhouse.io/{}",
+    "lever": "https://jobs.lever.co/{}",
+    "ashby": "https://jobs.ashbyhq.com/{}",
+    "smartrecruiters": "https://careers.smartrecruiters.com/{}",
+}
+
+
+# Takes whatever careers URL is in the sheet. If it isn't a board URL itself,
+# the page is opened to find a board embedded or linked from it. A platform
+# with no adapter yet (Workday, iCIMS...) is still recorded for later.
 def platform_for(url):
-    found = detect(url)
-    if found:
-        return found["platform"]
-    return "markup"
+    found = detect(url) or inspect(url)
+    if found.get("platform"):
+        board = BOARD_URLS.get(found["platform"])
+        return found["platform"], board.format(found["token"]) if board else url, None
+    if found.get("status") != 200:
+        return "markup", url, f"site answered {found.get('status') or found.get('error')}; paste the job board link instead"
+    return "markup", url, None
 
 
 def main(path=SEED_FILE):
@@ -45,9 +57,10 @@ def main(path=SEED_FILE):
             point = None
             if row.get("street_address") and row.get("town"):
                 point = geocode.geocode_address(f"{row['street_address']}, {row['town']}, {row['state']}")
-            platform = platform_for(row["careers_url"])
+            platform, careers_url, problem = platform_for(row["careers_url"])
             cur.execute(UPSERT, {
                 **row,
+                "careers_url": careers_url,
                 "slug": slugify(row["name"]),
                 "platform": platform,
                 "latitude": point and point["latitude"],
@@ -55,7 +68,7 @@ def main(path=SEED_FILE):
             })
             flag = "" if platform in ADAPTERS else "  (no adapter yet)"
             missed = "  (address not found)" if row.get("street_address") and not point else ""
-            print(f"{platform:16} {row['name']}{flag}{missed}")
+            print(f"{platform:16} {row['name']}{flag}{missed}{f'  ({problem})' if problem else ''}")
         conn.commit()
     print(f"seeded {len(rows)} employer(s)")
 

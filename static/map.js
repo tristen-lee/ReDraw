@@ -278,8 +278,8 @@ function clearShape() {
     clearMarkers();
     els.results.innerHTML = '';
     els.showMore.hidden = true;
-    els.count.textContent = 'Draw an area to see the jobs inside it';
-    setStatus('Corridor, loop, the long way home — whatever your drive actually looks like.');
+    els.count.textContent = '';
+    setStatus('');
 }
 
 function groupByPoint(jobs) {
@@ -429,7 +429,7 @@ async function runSearch() {
             els.count.textContent = 'Nothing inside that shape yet';
             setStatus(els.keyword.value.trim()
                 ? 'Try clearing the keyword, or drawing a wider area.'
-                : 'Try a wider area — most listings sit in towns along the main roads.');
+                : 'Try a wider area. Most listings sit in towns along the main roads.');
             return;
         }
         renderJobs(jobs);
