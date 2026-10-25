@@ -1,7 +1,7 @@
 /* ============================================================
    Tokens. Change these and the whole site follows.
    Spacing only uses 4 8 12 16 24 32 48 64.
-   Type only uses 28 20 16 13.
+   Type only uses 28 20 16 13, plus 40 for the employer page headline.
    ============================================================ */
 :root {
     --bg: #171513;              /* page */
@@ -581,3 +581,57 @@ form button:disabled { background: var(--border-strong); color: var(--text); cur
 
 .manage-link { margin-top: 8px; color: var(--text); overflow-wrap: anywhere; }
 .form-wrap > form + form { margin-top: 12px; }
+
+/* ============================================================
+   Employer page
+   ============================================================ */
+.employers-page main { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+.employers-page section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+.employers-page section:last-child { border-bottom: 0; }
+.employers-page h2 { font-size: 20px; margin-bottom: 8px; }
+.employers-page p { margin: 0; }
+.employers-page a:not(.button) { color: var(--brand); }
+
+.pitch > * { max-width: 640px; }
+.pitch h1 { font-size: 40px; letter-spacing: -0.8px; }
+.pitch .lede { margin-top: 16px; font-size: 20px; line-height: 1.45; }
+.pitch-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 24px !important; }
+.employers-page .quiet-link { color: var(--text-light); }
+.employers-page .quiet-link:hover { color: var(--text); }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.compare figure { margin: 0; }
+.compare svg { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: 12px; }
+.compare figcaption { margin-top: 12px; color: var(--text-light); font-size: 16px; }
+.compare figcaption strong { color: var(--text); }
+
+.compare .map-bg { fill: var(--bg-raised); }
+.compare .river { fill: none; stroke: #2E3B40; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.compare .highway { fill: none; stroke: var(--text-light); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.compare .radius { fill: rgba(156, 147, 137, 0.12); stroke: var(--text-light); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.compare .corridor-base { fill: none; stroke: var(--bg-raised); stroke-linecap: round; stroke-linejoin: round; }
+.compare .corridor { fill: none; stroke: var(--map-shape); stroke-opacity: 0.55; stroke-linecap: round; stroke-linejoin: round; }
+.compare .corridor-edge { fill: none; stroke: var(--brand); stroke-linecap: round; stroke-linejoin: round; }
+.compare .town-in { fill: var(--brand); stroke: var(--bg); stroke-width: 2; }
+.compare .town-out { fill: #5C554C; }
+.compare text { font: 600 13px "Public Sans", system-ui, sans-serif; paint-order: stroke; stroke: var(--bg-raised); stroke-width: 3px; stroke-linejoin: round; }
+.compare .label-in { fill: var(--text); }
+.compare .label-out { fill: #7A7268; font-weight: 400; }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
+.facts p { color: var(--text-light); }
+
+.steps ol { margin: 16px 0 24px; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 16px; max-width: 640px; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 32px 1fr; color: var(--text-light); }
+.steps li::before { content: counter(step); color: var(--brand); font-weight: 700; }
+.steps li strong { color: var(--text); }
+
+.about p { max-width: 640px; color: var(--text-light); }
+
+@media (max-width: 760px) {
+    .employers-page main { padding: 0 16px 48px; }
+    .employers-page section { padding: 32px 0; }
+    .pitch h1 { font-size: 28px; letter-spacing: -0.4px; }
+    .pitch .lede { font-size: 16px; }
+    .compare { grid-template-columns: 1fr; }
+}

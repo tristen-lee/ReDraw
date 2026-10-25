@@ -6,7 +6,7 @@ import secrets
 from urllib.parse import urlsplit
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -435,6 +435,11 @@ def apply_redirect(request: Request, job_id: int):
     return RedirectResponse(row[0].strip(), status_code=302)
 
 
+@app.get("/employers")
+def employers_page():
+    return FileResponse("static/employers.html")
+
+
 @app.get("/sitemap.xml")
 def sitemap(request: Request):
     base = site_base(request)
@@ -459,7 +464,7 @@ def sitemap(request: Request):
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-        f"<url><loc>{base}/</loc></url>{urls}</urlset>"
+        f"<url><loc>{base}/</loc></url><url><loc>{base}/employers</loc></url>{urls}</urlset>"
     )
     return Response(xml, media_type="application/xml")
 
