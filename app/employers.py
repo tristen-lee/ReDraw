@@ -1,6 +1,6 @@
 import re
 
-from app import ashby, geocode, greenhouse, lever, markup, places, smartrecruiters
+from app import ashby, geocode, greenhouse, lever, markup, places
 from app.ats import detect
 
 REGION = ("OR", "WA")
@@ -11,7 +11,6 @@ ADAPTERS = {
     "greenhouse": greenhouse.fetch,
     "lever": lever.fetch,
     "ashby": ashby.fetch,
-    "smartrecruiters": smartrecruiters.fetch,
     "markup": markup.fetch,
 }
 
@@ -91,10 +90,6 @@ class Locator:
         return None
 
 
-def in_region(job):
-    return any((places.parse_location(p.get("text")) or (None, None))[1] in REGION for p in job["places"])
-
-
 def collect(cur, platform):
     locator = Locator(cur)
     jobs, failed = [], []
@@ -103,10 +98,7 @@ def collect(cur, platform):
     for employer in roster:
         try:
             token = board_token(employer, platform)
-            if platform == "smartrecruiters":
-                postings = smartrecruiters.fetch(token, wanted=in_region)
-            else:
-                postings = ADAPTERS[platform](token)
+            postings = ADAPTERS[platform](token)
         except Exception as exc:
             failed.append({"employer_id": employer["id"], "name": employer["name"],
                            "error": f"{type(exc).__name__}: {exc}"[:300]})
