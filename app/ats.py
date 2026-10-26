@@ -15,6 +15,7 @@ PATTERNS = [
     ("greenhouse", r"(?:boards|job-boards)\.greenhouse\.io/(?:embed/job_board\?for=)?([A-Za-z0-9_-]+)"),
     ("greenhouse", r"greenhouse\.io/embed/job_board\?for=([A-Za-z0-9_-]+)"),
     ("ashby", r"jobs\.ashbyhq\.com/([A-Za-z0-9_-]+)"),
+    ("applicantpro", r"([A-Za-z0-9-]+)\.applicantpro\.com"),
     ("smartrecruiters", r"(?:careers|api)\.smartrecruiters\.com/(?:v1/companies/)?([A-Za-z0-9_-]+)"),
     ("workable", r"apply\.workable\.com/([A-Za-z0-9_-]+)"),
     ("recruitee", r"([A-Za-z0-9_-]+)\.recruitee\.com"),

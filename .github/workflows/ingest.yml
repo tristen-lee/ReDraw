@@ -48,6 +48,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -m app.ingest ashby
 
+      - name: Ingest ApplicantPro
+        if: ${{ !cancelled() }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m app.ingest applicantpro
+
       - name: Ingest employer sites
         if: ${{ !cancelled() }}
         env:

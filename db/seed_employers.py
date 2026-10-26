@@ -32,6 +32,7 @@ BOARD_URLS = {
     "greenhouse": "https://boards.greenhouse.io/{}",
     "lever": "https://jobs.lever.co/{}",
     "ashby": "https://jobs.ashbyhq.com/{}",
+    "applicantpro": "https://{}.applicantpro.com/jobs/",
 }
 
 
