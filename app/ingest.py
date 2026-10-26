@@ -244,7 +244,7 @@ def run_sweep():
 def alert(source, result=None, error=None):
     if error:
         mailer.notify_owner(f"Ingest failed: {source}", f"{source} failed and nothing was expired.\n\n{error}")
-    elif (result and (result["previous"] or 0) >= SMALL_SOURCE_JOBS
+    elif (result and (result.get("previous") or 0) >= SMALL_SOURCE_JOBS
           and result["found"] < result["previous"] * SUSPICIOUS_DROP_RATIO):
         mailer.notify_owner(
             f"Suspicious drop: {source}",
