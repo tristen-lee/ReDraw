@@ -43,10 +43,13 @@ function cabinFlavor() {
     };
 }
 
+const GLYPHS = 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf';
+
 function mapStyle(tilesUrl) {
     if (!tilesUrl) {
         return {
             version: 8,
+            glyphs: GLYPHS,
             sources: {
                 osm: {
                     type: 'raster',
@@ -60,7 +63,7 @@ function mapStyle(tilesUrl) {
     }
     return {
         version: 8,
-        glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+        glyphs: GLYPHS,
         sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
         sources: {
             protomaps: {
@@ -444,6 +447,47 @@ async function runSearch(trigger = 'keyword') {
 }
 
 // ---------------------------------------------------------------------------
+// Town labels
+
+// The basemap leaves small towns unnamed until you're zoomed well in, which
+// hides exactly the places people here draw around. Rank 1 is the corridor
+// and shows at every zoom; rank 2 joins once the region fills the screen.
+// Each town stops at its "until" zoom, where the basemap takes over naming it.
+// Layer zoom ranges can't read feature properties, so there's one pair of
+// layers per rank and cutoff.
+async function addTownLabels() {
+    let towns;
+    try {
+        towns = await (await fetch('/towns.geojson')).json();
+    } catch {
+        return;
+    }
+    map.addSource('towns', { type: 'geojson', data: towns });
+    const groups = new Set(towns.features.map(f => `${f.properties.rank}|${f.properties.until}`));
+    for (const group of groups) {
+        const [rank, until] = group.split('|').map(Number);
+        const minzoom = rank === 1 ? 0 : 8;
+        const size = rank === 1 ? 13 : 12;
+        const filter = ['all', ['==', ['get', 'rank'], rank], ['==', ['get', 'until'], until]];
+        map.addLayer({
+            id: `town-dot-${group}`, type: 'circle', source: 'towns', minzoom, maxzoom: until, filter,
+            paint: { 'circle-radius': 3, 'circle-color': '#3A342C', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#F6F0E3' },
+        }, 'trace-line');
+        map.addLayer({
+            id: `town-label-${group}`, type: 'symbol', source: 'towns', minzoom, maxzoom: until, filter,
+            layout: {
+                'text-field': ['get', 'name'],
+                'text-font': [rank === 1 ? 'Noto Sans Medium' : 'Noto Sans Regular'],
+                'text-size': size,
+                'text-anchor': ['match', ['get', 'side'], 'left', 'right', 'left'],
+                'text-offset': ['match', ['get', 'side'], 'left', ['literal', [-0.6, 0]], ['literal', [0.6, 0]]],
+            },
+            paint: { 'text-color': '#2E2A24', 'text-halo-color': '#F6F0E3', 'text-halo-width': 1.5 },
+        }, 'trace-line');
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Wiring
 
 function wireControls() {
@@ -542,6 +586,7 @@ async function init() {
             paint: { 'line-color': cssVar('--brand'), 'line-width': 3 },
         });
 
+        addTownLabels();
         wireControls();
         clearShape();
     });
