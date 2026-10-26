@@ -38,6 +38,8 @@ async function loadQueue() {
     }
 
     const jobs = await response.json();
+    // This browser belongs to the owner: stop it from counting itself.
+    try { localStorage.setItem('cupholder_internal', '1'); } catch { /* private mode */ }
     auth.style.display = 'none';
     document.getElementById('tools').hidden = false;
     loadReports();

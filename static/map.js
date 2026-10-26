@@ -232,6 +232,7 @@ function endTrace() {
     map.getSource('trace').setData(emptyCollection());
 
     if (tracePx.length < MIN_POINTS) {
+        window.cupholder?.track('draw_too_short', { points: tracePx.length });
         setStatus('That was too short to be an area. Drag a longer outline.');
         return;
     }
@@ -239,7 +240,7 @@ function endTrace() {
     const ring = simplify(tracePx, SIMPLIFY_PX).map(p => map.unproject(p).toArray());
     setDrawMode(false);
     setShape(ring);
-    runSearch();
+    runSearch('draw');
 }
 
 // ---------------------------------------------------------------------------
@@ -299,7 +300,7 @@ function popupHtml(group) {
     const precision = group.location.precision === 'exact' ? 'Exact address' : 'Town-level location';
     const items = group.jobs.map(job => `
         <li>
-            <a href="${escapeHtml(job.path)}">${escapeHtml(job.title)}</a>
+            <a href="${escapeHtml(job.path)}" data-id="${job.id}">${escapeHtml(job.title)}</a>
             <span>${escapeHtml(job.employer || '')}</span>
         </li>`).join('');
     return `
@@ -323,7 +324,10 @@ function markerElement(group) {
         el.textContent = count;
         el.setAttribute('aria-label', `${count} job${count === 1 ? '' : 's'} listed in ${place}`);
     }
-    el.addEventListener('click', () => highlight(group.key));
+    el.addEventListener('click', () => {
+        window.cupholder?.track('marker_click', { jobs: count, precision: group.location.precision });
+        highlight(group.key);
+    });
     return el;
 }
 
@@ -363,7 +367,7 @@ function jobCard(job) {
     const extra = inShape.length > 1 ? ` <span class="more">+${inShape.length - 1} more</span>` : '';
     const pay = payText(job);
     return `
-        <li class="job" data-keys="${escapeHtml(keys)}" data-first="${escapeHtml(keys.split('|')[0])}">
+        <li class="job" data-id="${job.id}" data-keys="${escapeHtml(keys)}" data-first="${escapeHtml(keys.split('|')[0])}">
             <a class="job-title" href="${escapeHtml(job.path)}">${escapeHtml(job.title)}</a>
             <p class="job-employer">${escapeHtml(job.employer || 'Employer not listed')}</p>
             <p class="job-where">${precisionTag(first.precision)} <span>${escapeHtml(first.raw_location || '')}</span>${extra}</p>
@@ -373,7 +377,8 @@ function jobCard(job) {
 
 // A big drawn shape can hold hundreds of jobs; rendering them all buries the
 // rest of the page on a phone.
-function showMoreJobs() {
+function showMoreJobs(event) {
+    if (event) window.cupholder?.track('show_more', { shown: shownCount, total: currentJobs.length });
     const next = currentJobs.slice(shownCount, shownCount + PAGE_SIZE);
     els.results.insertAdjacentHTML('beforeend', next.map(jobCard).join(''));
     shownCount += next.length;
@@ -406,14 +411,14 @@ function renderJobs(jobs) {
     setStatus(`Across ${places}, newest first.`);
 }
 
-async function runSearch() {
+async function runSearch(trigger = 'keyword') {
     if (!shapeRing) return;
     setStatus('Searching…');
 
     try {
         const response = await fetch('/api/search', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(window.cupholder?.headers() || {}), 'X-Cupholder-Trigger': trigger },
             body: JSON.stringify({ polygon: shapeRing, what: els.keyword.value }),
         });
         if (!response.ok) {
@@ -448,9 +453,19 @@ function wireControls() {
     canvas.addEventListener('pointerup', endTrace);
     canvas.addEventListener('pointercancel', endTrace);
 
-    els.draw.addEventListener('click', () => setDrawMode(!drawMode));
-    els.drawCancel.addEventListener('click', () => setDrawMode(false));
-    els.clear.addEventListener('click', () => { setDrawMode(false); clearShape(); });
+    els.draw.addEventListener('click', () => {
+        window.cupholder?.track(drawMode ? 'draw_cancel' : 'draw_start', { redraw: Boolean(shapeRing) });
+        setDrawMode(!drawMode);
+    });
+    els.drawCancel.addEventListener('click', () => {
+        window.cupholder?.track('draw_cancel', {});
+        setDrawMode(false);
+    });
+    els.clear.addEventListener('click', () => {
+        window.cupholder?.track('shape_cleared', { results: currentJobs.length });
+        setDrawMode(false);
+        clearShape();
+    });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawMode) setDrawMode(false); });
 
     els.showMore.addEventListener('click', showMoreJobs);
@@ -462,9 +477,21 @@ function wireControls() {
     });
 
     els.results.addEventListener('click', event => {
-        if (event.target.closest('a')) return;
         const card = event.target.closest('.job');
-        if (card) focusGroup(card.dataset.first);
+        if (!card) return;
+        const rank = [...els.results.children].indexOf(card) + 1;
+        if (event.target.closest('a')) {
+            window.cupholder?.track('job_open', { job_id: Number(card.dataset.id), rank, from: 'list' });
+            return;
+        }
+        window.cupholder?.track('card_click', { job_id: Number(card.dataset.id), rank });
+        focusGroup(card.dataset.first);
+    });
+
+    // Popups are rebuilt by MapLibre, so listen on the map container.
+    els.mapwrap.addEventListener('click', event => {
+        const link = event.target.closest('.popup a');
+        if (link) window.cupholder?.track('job_open', { job_id: Number(link.dataset.id), from: 'map' });
     });
 
     // Going full-screen to draw changes the map's size without a window resize.

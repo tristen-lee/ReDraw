@@ -21,6 +21,8 @@ function readErrors(body, httpStatus) {
     return `Submission failed (${httpStatus}).`;
 }
 
+form.addEventListener('focusin', () => window.cupholder?.track('post_start', {}), { once: true });
+
 form.addEventListener('submit', async event => {
     event.preventDefault();
 
@@ -39,11 +41,13 @@ form.addEventListener('submit', async event => {
         const body = await response.json().catch(() => null);
 
         if (!response.ok) {
+            window.cupholder?.track('post_failed', { status: response.status });
             status.className = 'error';
             status.textContent = readErrors(body, response.status);
             return;
         }
 
+        window.cupholder?.track('post_submitted', { placed: Boolean(body.placed) });
         status.className = 'ok';
         status.textContent = body.placed
             ? `Got it. Placed at ${body.location}. It goes live once reviewed.`

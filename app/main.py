@@ -3,6 +3,7 @@
 import os
 import re
 import secrets
+import time
 from urllib.parse import urlsplit
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, HTTPException, Request, Response
@@ -10,7 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import db, mailer, moderation, pages, submissions
+from app import db, mailer, moderation, pages, submissions, tracking
 from app.models import (
     Job, JobLocation, JobSubmission, OptOutRequest, PlaceRequest, RemoveRequest, ReviewRequest, SearchRequest,
     is_safe_link,
@@ -101,8 +102,16 @@ def polygon_wkt(points):
     return f"POLYGON(({coords}))"
 
 
+def is_tracked(http: Request):
+    return (
+        http.headers.get("x-cupholder-internal") != "1"
+        and not NON_HUMAN_AGENTS.search(http.headers.get("user-agent", ""))
+    )
+
+
 @app.post("/api/search")
-def search(request: SearchRequest) -> list[Job]:
+def search(request: SearchRequest, http: Request) -> list[Job]:
+    started = time.perf_counter()
     what = (request.what or "").strip() or None
     params = {
         "wkt": polygon_wkt(request.polygon),
@@ -148,7 +157,40 @@ def search(request: SearchRequest) -> list[Job]:
             )
         )
 
-    return list(jobs.values())
+    results = list(jobs.values())
+    if is_tracked(http):
+        try:
+            with db.connect() as conn, conn.cursor() as cur:
+                tracking.record_search(
+                    cur,
+                    visitor=http.headers.get("x-cupholder-visitor"),
+                    session=http.headers.get("x-cupholder-session"),
+                    wkt=params["wkt"],
+                    vertices=len(request.polygon),
+                    keyword=what,
+                    trigger=http.headers.get("x-cupholder-trigger"),
+                    jobs=results,
+                    took_ms=round((time.perf_counter() - started) * 1000),
+                )
+                conn.commit()
+        except Exception as exc:
+            print("search logging failed:", type(exc).__name__, exc)
+    return results
+
+
+@app.post("/api/events", status_code=204)
+async def record_event(http: Request):
+    if not is_tracked(http):
+        return Response(status_code=204)
+    try:
+        payload = await http.json()
+    except ValueError:
+        return Response(status_code=204)
+    if isinstance(payload, dict):
+        with db.connect() as conn, conn.cursor() as cur:
+            if tracking.record_event(cur, payload, http.url.hostname):
+                conn.commit()
+    return Response(status_code=204)
 
 
 SUBMISSIONS_PER_HOUR = 5
@@ -330,6 +372,13 @@ def click_stats(days: int = 30):
     }
 
 
+@app.get("/api/admin/stats", dependencies=[Depends(require_admin)])
+def traffic_stats(days: int = 30):
+    days = max(1, min(days, 365))
+    with db.connect() as conn, conn.cursor() as cur:
+        return tracking.stats(cur, days)
+
+
 @app.get("/api/config")
 def client_config():
     # Null until the basemap is hosted; the map falls back to OSM raster tiles.
@@ -438,6 +487,11 @@ def apply_redirect(request: Request, job_id: int):
 @app.get("/employers")
 def employers_page():
     return FileResponse("static/employers.html")
+
+
+@app.get("/privacy")
+def privacy_page():
+    return FileResponse("static/privacy.html")
 
 
 @app.get("/sitemap.xml")

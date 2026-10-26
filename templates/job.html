@@ -37,7 +37,7 @@
 
         {% if job.url %}
         <p class="apply">
-            <a class="apply-button" href="/go/{{ job.id }}" target="_blank" rel="noopener nofollow">
+            <a class="apply-button" href="/go/{{ job.id }}" target="_blank" rel="noopener nofollow" data-track="apply_click" data-track-job-id="{{ job.id }}" data-track-source="{{ job.source }}">
                 Apply on {{ job.source_label }}
             </a>
         </p>
@@ -52,7 +52,7 @@
 
         {% if job.url %}
         <p class="apply">
-            <a class="apply-button" href="/go/{{ job.id }}" target="_blank" rel="noopener nofollow">
+            <a class="apply-button" href="/go/{{ job.id }}" target="_blank" rel="noopener nofollow" data-track="apply_click" data-track-job-id="{{ job.id }}" data-track-source="{{ job.source }}">
                 Apply on {{ job.source_label }}
             </a>
         </p>
@@ -67,7 +67,7 @@
     <p class="ok">Thanks. We'll take a look.</p>
     {% else %}
     <details class="report">
-        <summary>Report this listing</summary>
+        <summary data-track="report_open" data-track-job-id="{{ job.id }}">Report this listing</summary>
         <form method="post" action="/jobs/{{ job.id }}/report">
             <label><input type="radio" name="reason" value="scam" required> Looks like a scam</label>
             <label><input type="radio" name="reason" value="filled"> Job's already filled or gone</label>
@@ -91,6 +91,9 @@
     <span>Listing courtesy of <a href="https://www.usajobs.gov" target="_blank" rel="noopener">USAJOBS</a>. Apply on the original posting.</span>
     {% endif %}
 </footer>
+
+<script src="/track.js"></script>
+<script>window.cupholder.track('job_view', { job_id: {{ job.id }}, source: '{{ job.source }}' });</script>
 
 </body>
 </html>
