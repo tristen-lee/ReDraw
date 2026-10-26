@@ -622,8 +622,16 @@ form button:disabled { background: var(--border-strong); color: var(--text); cur
 .compare .label-in { fill: var(--text); }
 .compare .label-out { fill: #7A7268; font-weight: 400; }
 
-.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
-.facts p { color: var(--text-light); }
+/* The homepage panel is empty until the first search; show the gesture. */
+.guide.compare { display: block; margin: 0; padding: 24px; }
+.guide svg { max-width: 300px; }
+.guide figcaption { font-size: 13px; max-width: 300px; }
+.panel:has(#result-count:not(:empty)) .guide { display: none; }
+
+.terms dl { margin: 16px 0 0; max-width: 760px; }
+.terms dl > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 16px 0; border-top: 1px solid var(--border); }
+.terms dt { font-weight: 600; }
+.terms dd { margin: 0; color: var(--text-light); }
 
 .steps ol { margin: 16px 0 24px; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 16px; max-width: 640px; }
 .steps li { counter-increment: step; display: grid; grid-template-columns: 32px 1fr; color: var(--text-light); }
@@ -638,6 +646,8 @@ form button:disabled { background: var(--border-strong); color: var(--text); cur
     .pitch h1 { font-size: 28px; letter-spacing: -0.4px; }
     .pitch .lede { font-size: 16px; }
     .compare { grid-template-columns: 1fr; }
+    .guide.compare { display: none; }
+    .terms dl > div { grid-template-columns: 1fr; gap: 4px; }
 }
 
 /* ============================================================
