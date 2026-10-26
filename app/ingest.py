@@ -12,6 +12,9 @@ BLANKET_LOCATION_THRESHOLD = 20
 # Refuse to expire anything if a run returns less than this share of what the
 # previous successful run saw. Catches a source breaking rather than emptying.
 SUSPICIOUS_DROP_RATIO = 0.5
+# Below this, a source going from 2 jobs to 0 is a filled position, not an
+# outage, so the drop check doesn't apply.
+SMALL_SOURCE_JOBS = 10
 
 UPSERT_JOB = """
 insert into jobs (
@@ -160,11 +163,11 @@ def run(source, fetch):
             previous = previous_success_count(cur, source)
             collapsed = (
                 previous is not None
-                and previous > 0
+                and previous >= SMALL_SOURCE_JOBS
                 and len(jobs) < previous * SUSPICIOUS_DROP_RATIO
             )
 
-            if not jobs or collapsed:
+            if collapsed or (not jobs and previous is None):
                 expired = 0
                 note = (
                     f"expiry skipped: {len(jobs)} found vs {previous} last run"
@@ -241,7 +244,8 @@ def run_sweep():
 def alert(source, result=None, error=None):
     if error:
         mailer.notify_owner(f"Ingest failed: {source}", f"{source} failed and nothing was expired.\n\n{error}")
-    elif result and result["previous"] and result["found"] < result["previous"] * SUSPICIOUS_DROP_RATIO:
+    elif (result and (result["previous"] or 0) >= SMALL_SOURCE_JOBS
+          and result["found"] < result["previous"] * SUSPICIOUS_DROP_RATIO):
         mailer.notify_owner(
             f"Suspicious drop: {source}",
             f"{source} found {result['found']} jobs, down from {result['previous']}. Nothing was expired.",
