@@ -27,13 +27,17 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font: 16px/1.5 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 16px/1.5 Archivo, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 a { color: var(--brand); }
 a:hover { color: var(--brand-hover); }
 
 h1, h2, h3 { margin: 0; line-height: 1.2; }
+
+/* Headlines only. Its uneven letter widths are what keep the page from reading
+   as a template; everything you actually read stays in Archivo. */
+h1, h2 { font-family: "Bricolage Grotesque", Archivo, system-ui, sans-serif; letter-spacing: -0.01em; }
 
 .meta { margin: 0; color: var(--text-light); font-size: 13px; }
 
@@ -248,7 +252,7 @@ body.drawing .pin { pointer-events: none; }
     place-items: center;
     padding: 0;
     border: 0;
-    font: 600 13px/1 "Public Sans", system-ui, sans-serif;
+    font: 600 13px/1 Archivo, system-ui, sans-serif;
     font-style: normal;
     cursor: pointer;
 }
@@ -614,7 +618,7 @@ form button:disabled { background: var(--border-strong); color: var(--text); cur
 .compare .corridor-edge { fill: none; stroke: var(--brand); stroke-linecap: round; stroke-linejoin: round; }
 .compare .town-in { fill: var(--brand); stroke: var(--bg); stroke-width: 2; }
 .compare .town-out { fill: #5C554C; }
-.compare text { font: 600 13px "Public Sans", system-ui, sans-serif; paint-order: stroke; stroke: var(--bg-raised); stroke-width: 3px; stroke-linejoin: round; }
+.compare text { font: 600 13px Archivo, system-ui, sans-serif; paint-order: stroke; stroke: var(--bg-raised); stroke-width: 3px; stroke-linejoin: round; }
 .compare .label-in { fill: var(--text); }
 .compare .label-out { fill: #7A7268; font-weight: 400; }
 
