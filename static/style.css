@@ -35,9 +35,17 @@ a:hover { color: var(--brand-hover); }
 
 h1, h2, h3 { margin: 0; line-height: 1.2; }
 
-/* Headlines only. Its uneven letter widths are what keep the page from reading
-   as a template; everything you actually read stays in Archivo. */
-h1, h2 { font-family: "Bricolage Grotesque", Archivo, system-ui, sans-serif; letter-spacing: -0.01em; }
+/* The wordmark's face, for page headlines only. It ships in one light weight,
+   so the browser must not fake a bold, and below about 24px it reads thinner
+   than the bold labels around it; section headings stay in Archivo. */
+@font-face {
+    font-family: "Mbkaos";
+    src: url("/Mbkaos-font.woff2") format("woff2");
+    font-weight: 300;
+    font-display: swap;
+}
+h1 { font-family: Mbkaos, Archivo, system-ui, sans-serif; font-weight: 300; font-synthesis: none; letter-spacing: 0; }
+h2 { font-weight: 600; }
 
 .meta { margin: 0; color: var(--text-light); font-size: 13px; }
 
