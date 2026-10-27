@@ -33,6 +33,7 @@ BOARD_URLS = {
     "lever": "https://jobs.lever.co/{}",
     "ashby": "https://jobs.ashbyhq.com/{}",
     "applicantpro": "https://{}.applicantpro.com/jobs/",
+    "recruitee": "https://{}.recruitee.com/",
 }
 
 

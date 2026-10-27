@@ -1,6 +1,6 @@
 import re
 
-from app import applicantpro, ashby, geocode, greenhouse, lever, markup, places
+from app import applicantpro, ashby, geocode, greenhouse, lever, markup, places, recruitee
 from app.ats import detect
 
 REGION = ("OR", "WA")
@@ -12,6 +12,7 @@ ADAPTERS = {
     "lever": lever.fetch,
     "ashby": ashby.fetch,
     "applicantpro": applicantpro.fetch,
+    "recruitee": recruitee.fetch,
     "markup": markup.fetch,
 }
 
