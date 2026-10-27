@@ -34,7 +34,8 @@ def locate(address, timeout=geocode.TIMEOUT_SECONDS):
     if match is None:
         return None
     return {
-        "raw": match["matched_address"],
+        # What the employer typed reads better than the geocoder's all-caps match.
+        "raw": address,
         "precision": "exact",
         "latitude": match["latitude"],
         "longitude": match["longitude"],

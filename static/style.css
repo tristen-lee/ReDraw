@@ -276,7 +276,26 @@ body.drawing .pin { pointer-events: none; }
 }
 
 /* 24px hit area around a 12px dot, so it's tappable. */
-.pin-exact { width: 24px; height: 24px; background: transparent; }
+.pin-exact { position: relative; width: 24px; height: 24px; background: transparent; }
+
+/* An address pin always sits above a town marker, which can cover it at low zoom. */
+.maplibregl-marker.pin-exact { z-index: 2; }
+
+/* Several jobs at one address: a small count, kept off the dot so it still
+   reads as an exact pin rather than a town. */
+.pin-count {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 13px;
+    line-height: 18px;
+}
 
 .pin-exact::after {
     content: "";

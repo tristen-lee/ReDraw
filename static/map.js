@@ -286,11 +286,22 @@ function clearShape() {
     setStatus('');
 }
 
+// The Census geocoder shouts ("58646 MCNULTY WAY, SAINT HELENS, OR, 97051").
+const KEEP_UPPER = new Set(['or', 'wa', 'ne', 'nw', 'se', 'sw']);
+
+function tidyAddress(text) {
+    if (!text || text !== text.toUpperCase()) return text;
+    return text.toLowerCase().replace(/[a-z0-9]+/g, word =>
+        KEEP_UPPER.has(word) ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1));
+}
+
+// Four decimals is about ten meters: jobs at one building share a pin even
+// when one of them was placed by hand a few feet off.
 function groupByPoint(jobs) {
     const groups = new Map();
     for (const job of jobs) {
         for (const location of job.locations) {
-            const key = `${location.latitude},${location.longitude}`;
+            const key = `${location.latitude.toFixed(4)},${location.longitude.toFixed(4)}`;
             if (!groups.has(key)) groups.set(key, { key, location, jobs: [] });
             groups.get(key).jobs.push(job);
         }
@@ -298,17 +309,24 @@ function groupByPoint(jobs) {
     return [...groups.values()];
 }
 
+// One employer at a pin gets named once up top; a mixed pin names each job's.
 function popupHtml(group) {
     const count = group.jobs.length;
     const precision = group.location.precision === 'exact' ? 'Exact address' : 'Town-level location';
-    const items = group.jobs.map(job => `
+    const employers = new Set(group.jobs.map(job => job.employer || ''));
+    const oneEmployer = employers.size === 1 && [...employers][0];
+    const items = group.jobs.map(job => {
+        const detail = oneEmployer ? payText(job) : job.employer;
+        return `
         <li>
             <a href="${escapeHtml(job.path)}" data-id="${job.id}">${escapeHtml(job.title)}</a>
-            <span>${escapeHtml(job.employer || '')}</span>
-        </li>`).join('');
+            ${detail ? `<span>${escapeHtml(detail)}</span>` : ''}
+        </li>`;
+    }).join('');
+    const place = escapeHtml(tidyAddress(group.location.raw_location) || 'Unknown location');
     return `
         <div class="popup">
-            <p class="popup-place">${escapeHtml(group.location.raw_location || 'Unknown location')}</p>
+            ${oneEmployer ? `<p class="popup-place">${escapeHtml(oneEmployer)}</p><p class="popup-meta">${place}</p>` : `<p class="popup-place">${place}</p>`}
             <p class="popup-meta">${count} job${count === 1 ? '' : 's'} &middot; ${precision}</p>
             <ul>${items}</ul>
         </div>`;
@@ -318,9 +336,15 @@ function markerElement(group) {
     const el = document.createElement('button');
     el.type = 'button';
     const count = group.jobs.length;
-    const place = group.location.raw_location || 'this location';
+    const place = tidyAddress(group.location.raw_location) || 'this location';
     if (group.location.precision === 'exact') {
         el.className = 'pin pin-exact';
+        if (count > 1) {
+            const badge = document.createElement('span');
+            badge.className = 'pin-count';
+            badge.textContent = count;
+            el.append(badge);
+        }
         el.setAttribute('aria-label', `${count} job${count === 1 ? '' : 's'} at an exact address in ${place}`);
     } else {
         el.className = 'pin pin-town';
@@ -373,7 +397,7 @@ function jobCard(job) {
         <li class="job" data-id="${job.id}" data-keys="${escapeHtml(keys)}" data-first="${escapeHtml(keys.split('|')[0])}">
             <a class="job-title" href="${escapeHtml(job.path)}">${escapeHtml(job.title)}</a>
             <p class="job-employer">${escapeHtml(job.employer || 'Employer not listed')}</p>
-            <p class="job-where">${precisionTag(first.precision)} <span>${escapeHtml(first.raw_location || '')}</span>${extra}</p>
+            <p class="job-where">${precisionTag(first.precision)} <span>${escapeHtml(tidyAddress(first.raw_location) || '')}</span>${extra}</p>
             <p class="job-meta">${pay ? `<span class="pay">${escapeHtml(pay)}</span> &middot; ` : ''}${escapeHtml(relativeDate(job.date_posted))} &middot; via ${escapeHtml(SOURCE_LABELS[job.source] || 'employer site')}</p>
         </li>`;
 }
