@@ -385,7 +385,7 @@ def client_config():
     return {"tiles_url": os.environ.get("PMTILES_URL") or None}
 
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 def health():
     with db.connect() as conn, conn.cursor() as cur:
         # "stored" counts everything held; "mappable" is what a drawn shape can
@@ -438,8 +438,8 @@ def site_base(request: Request):
     return (configured or str(request.base_url)).rstrip("/")
 
 
-@app.get("/jobs/{job_id}", response_class=HTMLResponse)
-@app.get("/jobs/{job_id}/{slug}", response_class=HTMLResponse)
+@app.api_route("/jobs/{job_id}", response_class=HTMLResponse, methods=["GET", "HEAD"])
+@app.api_route("/jobs/{job_id}/{slug}", response_class=HTMLResponse, methods=["GET", "HEAD"])
 def job_page(request: Request, job_id: int, slug: str | None = None, reported: str | None = None):
     with db.connect() as conn, conn.cursor() as cur:
         job = pages.load(cur, job_id)
@@ -484,7 +484,7 @@ def apply_redirect(request: Request, job_id: int):
     return RedirectResponse(row[0].strip(), status_code=302)
 
 
-@app.get("/employers")
+@app.api_route("/employers", methods=["GET", "HEAD"])
 def employers_page():
     return FileResponse("static/employers.html")
 
@@ -494,7 +494,7 @@ def privacy_page():
     return FileResponse("static/privacy.html")
 
 
-@app.get("/sitemap.xml")
+@app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 def sitemap(request: Request):
     base = site_base(request)
     with db.connect() as conn, conn.cursor() as cur:
@@ -523,7 +523,7 @@ def sitemap(request: Request):
     return Response(xml, media_type="application/xml")
 
 
-@app.get("/robots.txt")
+@app.api_route("/robots.txt", methods=["GET", "HEAD"])
 def robots(request: Request):
     body = (
         "User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/\nDisallow: /go/\n\n"
