@@ -456,6 +456,26 @@ body.drawing .maplibregl-cooperative-gesture-screen { display: none; }
 
     /* No room for the key on a phone; the job list labels precision anyway. */
     .legend { display: none; }
+
+    /* A popup by the pin covers most of a phone map and pushes its close
+       button off screen, so on phones it becomes a sheet along the bottom. */
+    .maplibregl-popup {
+        transform: none !important;
+        top: auto !important;
+        left: 8px !important;
+        right: 8px;
+        bottom: 8px;
+        max-width: none !important;
+        max-height: 40%;
+        display: flex;
+        flex-direction: column;
+        /* Above the zoom buttons and map credit, which sit over popups by default. */
+        z-index: 3;
+    }
+    .maplibregl-popup-tip { display: none; }
+    .maplibregl-popup-content { display: flex; flex-direction: column; min-height: 0; padding: 12px 16px; }
+    .maplibregl-popup .popup { max-height: none; min-height: 0; overflow-y: auto; }
+    .maplibregl-popup-close-button { width: 44px; height: 44px; font-size: 24px; }
     .show-more { width: calc(100% - 32px); margin: 16px; }
 
     .hiring { flex-direction: column; align-items: flex-start; padding: 32px 16px; }

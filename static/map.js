@@ -447,8 +447,16 @@ function showMoreJobs(event) {
     if (activeKey) highlight(activeKey);
 }
 
+// Exact-address jobs lead the list; the server's newest-first order holds
+// within each half.
+function exactFirst(jobs) {
+    const exact = job => job.locations.some(location => location.precision === 'exact');
+    return [...jobs.filter(exact), ...jobs.filter(job => !exact(job))];
+}
+
 function renderJobs(jobs) {
     clearMarkers();
+    jobs = exactFirst(jobs);
 
     const groups = groupByPoint(jobs);
     for (const group of groups) {
@@ -466,7 +474,7 @@ function renderJobs(jobs) {
 
     const places = groups.length === 1 ? '1 place' : `${groups.length} places`;
     els.count.textContent = `${jobs.length} job${jobs.length === 1 ? '' : 's'} inside your shape`;
-    setStatus(`Across ${places}, newest first.`);
+    setStatus(`Across ${places}. Exact addresses first, then newest.`);
 }
 
 async function runSearch(trigger = 'keyword') {
