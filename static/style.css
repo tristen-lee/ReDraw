@@ -209,16 +209,8 @@ h1.wordmark { margin: 0; }
     position: absolute;
     top: 12px;
     left: 12px;
-    right: 12px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 8px 8px 16px;
-    border-radius: 6px;
-    background: var(--bg-raised);
-    color: var(--text);
-    box-shadow: 0 2px 8px rgba(23, 21, 19, 0.3);
 }
+.draw-bar .button { background: var(--bg-raised); box-shadow: 0 2px 8px rgba(23, 21, 19, 0.3); }
 
 body.drawing .draw-bar { display: flex; }
 body.drawing .map-chip { display: none; }
@@ -230,6 +222,8 @@ body.drawing { -webkit-user-select: none; user-select: none; }
 body.drawing #map { cursor: crosshair; touch-action: none; }
 body.drawing #map .maplibregl-canvas-container { cursor: crosshair; }
 body.drawing .pin { pointer-events: none; }
+/* MapLibre's "use two fingers" notice would flash on every one-finger stroke. */
+body.drawing .maplibregl-cooperative-gesture-screen { display: none; }
 
 /* Labels only; let drags pass through them to the map. */
 .map-chip,
@@ -448,8 +442,8 @@ body.drawing .pin { pointer-events: none; }
 
     .toolbar { padding: 12px 16px; border-right: 0; }
 
-    /* Phones need every pixel of width, and full-screen drawing can't have margins. */
-    .mapwrap { margin: 0; border: 0; border-radius: 0; }
+    /* Wide side margins leave room to scroll the page past the map with a thumb. */
+    .mapwrap { margin: 8px 32px 16px; }
     .toolbar .button { flex: 1 1 0; }
 
     .panel { overflow: visible; border-right: 0; }
@@ -458,10 +452,10 @@ body.drawing .pin { pointer-events: none; }
     .job { padding: 16px; }
 
     /* Drawing gets the whole screen; a thumb can't trace inside a scrolling page. */
-    .mapwrap.fullscreen { position: fixed; inset: 0; z-index: 1000; min-height: 0; }
+    .mapwrap.fullscreen { position: fixed; inset: 0; z-index: 1000; min-height: 0; margin: 0; border: 0; border-radius: 0; }
 
-    /* One short row, so the key doesn't cover the markers it explains. */
-    .legend { bottom: 40px; grid-auto-flow: column; gap: 16px; padding: 8px 12px; }
+    /* No room for the key on a phone; the job list labels precision anyway. */
+    .legend { display: none; }
     .show-more { width: calc(100% - 32px); margin: 16px; }
 
     .hiring { flex-direction: column; align-items: flex-start; padding: 32px 16px; }

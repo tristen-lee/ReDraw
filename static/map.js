@@ -95,6 +95,9 @@ let shapeRing = null;
 let drawMode = false;
 let tracing = false;
 let tracePx = [];
+// Fingers currently down. A second one turns the gesture into a map move.
+const touching = new Set();
+let multiTouch = false;
 let markers = new Map();
 let activeKey = null;
 let currentJobs = [];
@@ -199,18 +202,40 @@ function setDrawMode(on) {
         }
     }
 
-    for (const handler of [map.dragPan, map.doubleClickZoom, map.touchZoomRotate, map.boxZoom, map.scrollZoom]) {
+    for (const handler of [map.doubleClickZoom, map.boxZoom, map.scrollZoom]) {
         on ? handler.disable() : handler.enable();
     }
+    // On a phone one finger draws and two move the map. Cooperative gestures
+    // is what makes MapLibre's touch pan wait for a second finger.
+    const phoneDraw = on && PHONE.matches;
+    on && !phoneDraw ? map.dragPan.disable() : map.dragPan.enable();
+    // Turning it off removes MapLibre's notice element while its own 100ms
+    // hide timer may still be pending, which throws; wait that out first.
+    if (phoneDraw) map.cooperativeGestures.enable();
+    else setTimeout(() => { if (!drawMode) map.cooperativeGestures.disable(); }, 150);
+    map.touchZoomRotate.enable();
+    map.touchZoomRotate.disableRotation();
     if (!on) {
-        map.touchZoomRotate.disableRotation();
         tracing = false;
         map.getSource('trace').setData(emptyCollection());
     }
 }
 
+function dropTrace() {
+    tracing = false;
+    tracePx = [];
+    map.getSource('trace').setData(emptyCollection());
+}
+
 function beginTrace(event) {
     if (!drawMode || event.button > 0) return;
+    touching.add(event.pointerId);
+    if (touching.size > 1) {
+        multiTouch = true;
+        dropTrace();
+        return;
+    }
+    if (multiTouch) return;
     tracing = true;
     tracePx = [pointFrom(event)];
     map.getCanvasContainer().setPointerCapture?.(event.pointerId);
@@ -229,7 +254,12 @@ function extendTrace(event) {
     });
 }
 
-function endTrace() {
+function endTrace(event) {
+    touching.delete(event.pointerId);
+    if (multiTouch) {
+        if (touching.size === 0) multiTouch = false;
+        return;
+    }
     if (!tracing) return;
     tracing = false;
     map.getSource('trace').setData(emptyCollection());
@@ -271,7 +301,8 @@ function overlayPadding() {
     const top = els.chip.hidden
         ? edge
         : els.chip.getBoundingClientRect().bottom - frame.top + 12 + markerRadius;
-    const bottom = frame.bottom - legend.top + 12 + markerRadius;
+    // The key is hidden on phones, and a hidden element measures as all zeros.
+    const bottom = legend.height ? frame.bottom - legend.top + 12 + markerRadius : edge;
     return { top, bottom, left: edge, right: edge };
 }
 
