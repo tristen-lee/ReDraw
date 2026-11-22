@@ -62,6 +62,17 @@ async def revalidate_static(request: Request, call_next):
     return response
 
 
+# Facebook's crawler asks for byte ranges. The CDN in front of Render
+# Brotli-compresses the resulting 206 even when the client only accepts gzip,
+# and the crawler fails with BAD_CONTENT_ENCODING. Nothing here is big enough
+# to need partial downloads, so every request gets the whole file.
+@app.middleware("http")
+async def whole_files_only(request: Request, call_next):
+    if "range" in request.headers:
+        request.scope["headers"] = [(k, v) for k, v in request.scope["headers"] if k != b"range"]
+    return await call_next(request)
+
+
 def require_admin(x_admin_token: str = Header(default="")):
     expected = os.environ.get("ADMIN_TOKEN")
     if not expected:
