@@ -621,8 +621,11 @@ async function init() {
     map = new maplibregl.Map({
         container: 'map',
         style: mapStyle(tilesUrl),
-        center: [-122.95, 45.85],
-        zoom: 8.4,
+        // Opens on the middle of the corridor, St. Helens and Scappoose. Fitting
+        // all of it, Clatskanie to Portland, needs a zoom where the basemap
+        // names every town in two states.
+        center: [-122.86, 45.82],
+        zoom: PHONE.matches ? 9.2 : 9.8,
         maxBounds: [[-127.5, 40.5], [-113.5, 50.5]],
         attributionControl: { compact: true },
         dragRotate: false,
